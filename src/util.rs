@@ -5,11 +5,13 @@ pub enum Color {
     Red = 2, 
     Blue = 3, 
     Green = 4, 
+    Yellow = 5, 
 }
 
 pub trait Drawable {
     fn refresh(&self);
     fn render(&self);
+    fn process_events(&mut self, ch:i32);
 }
 
 pub struct Character {
@@ -17,8 +19,9 @@ pub struct Character {
     joinbattle: i32, 
     pub initiative: i32, 
     pub onslaught: i32, 
-    done: bool, 
-    maxhealth: i32, 
+    pub done: bool, 
+    pub maxhealth: i32, 
+    pub health: i32, 
     evasion: i32, 
     parry: i32, 
     soak: i32, 
@@ -31,6 +34,7 @@ impl Character {
             name,
             joinbattle, 
             maxhealth,
+            health: maxhealth,
             initiative: 0, 
             onslaught: 0,
             done: false,
@@ -45,6 +49,12 @@ impl Character {
             Character::new("Oswald".into(), 4, 12),
             Character::new("Embla".into(), 5, 10), 
         ]
+    }
+    pub fn crashed(&self) -> bool {
+        self.initiative <= 0
+    }
+    pub fn dead(&self) -> bool {
+        self.health <= 0
     }
 }
 
