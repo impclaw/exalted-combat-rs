@@ -56,5 +56,15 @@ impl Character {
     pub fn dead(&self) -> bool {
         self.health <= 0
     }
+    pub fn sortkey(&self) -> i32 {
+        let mut key = -self.initiative;
+        if self.health <= 0 {
+            key += 5000;
+        }
+        if self.done {
+            key += 1000;
+        }
+        return key;
+    }
 }
 

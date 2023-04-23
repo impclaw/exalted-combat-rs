@@ -67,10 +67,40 @@ impl MainWindow {
     }
 
     fn mark_done(&mut self) {
-        match self.characters.get_mut(self.selpos as usize - 1) {
-            Some(x) => x.done = !x.done,
-            None => {}, 
+        self.characters[self.selpos as usize - 1].done ^= true;
+        self.update()
+    }
+
+    fn set_char_initiative(&mut self) {
+        let mut char = &mut self.characters[self.selpos as usize - 1];
+        let result = crate::textbox::textbox_open("Initiative: ", 0, 0, 30);
+        char.initiative = result.parse::<i32>().unwrap_or(char.initiative);
+        self.update();
+    }
+
+    fn set_char_onslaught(&mut self) {
+        let mut char = &mut self.characters[self.selpos as usize - 1];
+        let result = crate::textbox::textbox_open("Onslaught: ", 0, 0, 30);
+        char.onslaught = result.parse::<i32>().unwrap_or(char.onslaught);
+        self.update();
+    }
+
+    fn set_char_health(&mut self) {
+        let mut char = &mut self.characters[self.selpos as usize - 1];
+        let result = crate::textbox::textbox_open("Health: ", 0, 0, 30);
+        char.health = result.parse::<i32>().unwrap_or(char.health);
+        self.update();
+    }
+
+    fn new_round(&mut self) {
+        for char in &mut self.characters {
+            char.done = false;
         }
+        self.update();
+    }
+
+    fn update(&mut self) {
+        self.characters.sort_by_key(|c| c.sortkey());
     }
 
     fn draw_char_list(&self) {
@@ -135,6 +165,10 @@ impl Drawable for MainWindow {
             ncurses::KEY_UP => self.cursor_move(-1), 
             ncurses::KEY_DOWN => self.cursor_move(1),
             KEY_MARK_DONE => self.mark_done(),
+            KEY_INITIATIVE => self.set_char_initiative(),
+            KEY_ONSLAUGHT => self.set_char_onslaught(), 
+            KEY_HEALTH => self.set_char_health(),
+            KEY_NEW_ROUND => self.new_round(),
             _ => {}, 
         }
     }

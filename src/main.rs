@@ -1,6 +1,7 @@
 use ncurses;
 mod mainwindow;
 mod util;
+mod textbox;
 
 use util::Drawable;
 use util::Color;
