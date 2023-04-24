@@ -17,7 +17,6 @@ pub trait Drawable {
 
 pub struct Character {
     pub name: String,
-    joinbattle: i32, 
     pub initiative: i32, 
     pub onslaught: i32, 
     pub done: bool, 
@@ -33,7 +32,6 @@ impl Character {
     pub fn new(name:String, joinbattle:i32, maxhealth:i32) -> Character { 
         Character {
             name,
-            joinbattle, 
             maxhealth,
             health: maxhealth,
             initiative: dice_roll(joinbattle + 3), 
