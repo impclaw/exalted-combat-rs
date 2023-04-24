@@ -157,6 +157,33 @@ impl MainWindow {
         ncurses::werase(self.rightwin);
         ncurses::wborder(self.rightwin, 32, 32, 0, 32, 0, 0, 0, 0);
         drawrt(self.rightwin, 0, 2, "Details", Color::White, true, true, false, false, 32);
+        
+        let char = match self.characters.get(self.selpos as usize - 1) {
+            Some(x) => x,
+            None => { return; }
+        };
+        
+        drawrt(self.rightwin, 1, 2, &char.name, 
+            Color::Green, true, false, false, false, ncurses::COLS() / 2 - 2
+        );
+        drawcolor(self.rightwin, 2, 2, 
+            format!("Evasion: {}", char.evasion).as_str(), 
+            Color::Blue, ncurses::COLS() / 4 - 2
+        );
+        drawcolor(self.rightwin, 2, ncurses::COLS() / 4 - 1, 
+            format!("Parry:    {}", char.parry).as_str(), 
+            Color::Blue, ncurses::COLS() / 4 - 2
+        );
+        drawcolor(self.rightwin, 3, 2, 
+            format!("Soak:    {}", char.soak).as_str(), 
+            Color::Blue, ncurses::COLS() / 4 - 2
+        );
+        drawcolor(self.rightwin, 3, ncurses::COLS() / 4 - 1, 
+            format!("Hardness: {}", char.hardness).as_str(), 
+            Color::Blue, ncurses::COLS() / 4 - 2
+        );
+
+        
     }
     
     fn draw_log(&self) {

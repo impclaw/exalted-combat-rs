@@ -22,10 +22,10 @@ pub struct Character {
     pub done: bool, 
     pub maxhealth: i32, 
     pub health: i32, 
-    evasion: i32, 
-    parry: i32, 
-    soak: i32, 
-    hardness: i32, 
+    pub evasion: i32, 
+    pub parry: i32, 
+    pub soak: i32, 
+    pub hardness: i32, 
 }
 
 impl Character {
