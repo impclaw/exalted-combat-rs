@@ -54,6 +54,18 @@ impl MainWindow {
     pub fn new() -> MainWindow {
         let midw = ncurses::COLS() / 2;
         let midh = ncurses::LINES() / 2;
+
+        let mut char_list:Vec<Character> = serde_json::from_str(
+            std::fs::read_to_string("characters.json").expect(
+                "Could not open characters.json"
+            ).as_str()
+        ).expect(
+            "characters.json has invalid formatting"
+        );
+        for char in char_list.iter_mut() {
+            char.reset();
+        }
+
         let monster_list:Vec<Character> = serde_json::from_str(
             std::fs::read_to_string("monsters.json").expect(
                 "Could not open monsters.json"
@@ -61,15 +73,18 @@ impl MainWindow {
         ).expect(
             "monsters.json has invalid formatting"
         );
-        MainWindow { 
+
+        let mut window = MainWindow { 
             leftwin: ncurses::subwin(ncurses::stdscr(), midh, midw, 0, 0), 
             rightwin: ncurses::subwin(ncurses::stdscr(), ncurses::LINES(), midw, 0, midw), 
             logwin: ncurses::subwin(ncurses::stdscr(), midh, midw, midh, 0), 
-            characters: Character::defaults(), 
+            characters: char_list, 
             monsters: monster_list,
             selpos: 1, 
             markedpos: -1,
-        }
+        };
+        window.update();
+        return window;
     }
 
     fn cursor_move(&mut self, amount:i32) {

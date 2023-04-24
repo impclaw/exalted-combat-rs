@@ -61,7 +61,7 @@ impl Character {
             maxhealth,
             health: maxhealth,
             joinbattle: 0,
-            initiative: dice_roll(joinbattle + 3), 
+            initiative: 0, 
             onslaught: 0,
             done: false,
             evasion: 0,
@@ -71,12 +71,6 @@ impl Character {
             attacks: None,
             specials: None,
         }
-    }
-    pub fn defaults() -> Vec<Character> {
-        vec![
-            Character::new("Oswald".into(), 4, 12),
-            Character::new("Embla".into(), 5, 10), 
-        ]
     }
     pub fn reset(&mut self) {
         self.initiative = dice_roll(self.joinbattle + 3);
