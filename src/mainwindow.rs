@@ -26,6 +26,7 @@ pub struct MainWindow {
     selpos: i32, 
     markedpos: i32,
     characters: Vec<Character>, 
+    monsters: Vec<Character>, 
 }
 
 fn drawrt(win:*mut i8, y:i32, x:i32, text:&str, color:Color, 
@@ -53,11 +54,19 @@ impl MainWindow {
     pub fn new() -> MainWindow {
         let midw = ncurses::COLS() / 2;
         let midh = ncurses::LINES() / 2;
+        let monster_list:Vec<Character> = serde_json::from_str(
+            std::fs::read_to_string("monsters.json").expect(
+                "Could not open monsters.json"
+            ).as_str()
+        ).expect(
+            "monsters.json has invalid formatting"
+        );
         MainWindow { 
             leftwin: ncurses::subwin(ncurses::stdscr(), midh, midw, 0, 0), 
             rightwin: ncurses::subwin(ncurses::stdscr(), ncurses::LINES(), midw, 0, midw), 
             logwin: ncurses::subwin(ncurses::stdscr(), midh, midw, midh, 0), 
             characters: Character::defaults(), 
+            monsters: monster_list,
             selpos: 1, 
             markedpos: -1,
         }
@@ -115,6 +124,24 @@ impl MainWindow {
         self.characters.push(char);
     }
 
+    fn add_monster(&mut self) {
+        let list:Vec<String> = self.monsters.iter().map(|x| x.name.clone()).collect();
+        let selmonster = crate::textbox::textbox_select("Monster: ", 0, 0, 30, &list);
+        let count = self.characters.iter().filter(|x| x.name == selmonster).count();
+        let label = char::from_u32(count as u32 + 65);
+        for monster in self.monsters.iter() {
+            if monster.name == selmonster {
+                let mut monster_copy = monster.clone();
+                if label.is_some() {
+                    monster_copy.label = Some(label.unwrap().to_string());
+                }
+                monster_copy.reset();
+                self.characters.push(monster_copy);
+            }
+        }
+        self.update();
+    }
+
     fn update(&mut self) {
         self.characters.sort_by_key(|c| c.sortkey());
     }
@@ -138,7 +165,7 @@ impl MainWindow {
             drawrt(self.leftwin, pos, 2, 
                 format!(
                     "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<13}", 
-                    char.name, 
+                    format!("{} {}", char.name, char.label.clone().unwrap_or(String::from(""))), 
                     char.initiative, 
                     char.onslaught, 
                     if char.done { "D" } else { "" }, 
@@ -179,7 +206,7 @@ impl MainWindow {
             Color::Blue, ncurses::COLS() / 4 - 2
         );
         drawcolor(self.rightwin, 3, ncurses::COLS() / 4 - 1, 
-            format!("Hardness: {}", char.hardness).as_str(), 
+            format!("Hardness: {}", char.hardness.unwrap_or(0)).as_str(), 
             Color::Blue, ncurses::COLS() / 4 - 2
         );
 
@@ -213,6 +240,7 @@ impl Drawable for MainWindow {
             KEY_HEALTH => self.set_char_health(),
             KEY_NEW_ROUND => self.new_round(),
             KEY_ADD_CHAR => self.add_char(),
+            KEY_ADD_MONSTER => self.add_monster(),
             _ => {}, 
         }
     }

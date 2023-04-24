@@ -1,4 +1,5 @@
 use rand::Rng;
+use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Copy)]
 pub enum Color {
@@ -15,32 +16,60 @@ pub trait Drawable {
     fn process_events(&mut self, ch:i32);
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct Attack {
+    pub name: String, 
+    pub dice: i32, 
+    pub damage: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct Special {
+    pub name: String, 
+    pub text: String, 
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Character {
     pub name: String,
+    #[serde(skip)]
+    pub label: Option<String>, 
+    #[serde(skip)]
     pub initiative: i32, 
+    pub joinbattle: i32,
+    #[serde(skip)]
     pub onslaught: i32, 
+    #[serde(skip)]
     pub done: bool, 
+    #[serde(rename = "health")]
     pub maxhealth: i32, 
+    #[serde(skip)]
     pub health: i32, 
     pub evasion: i32, 
     pub parry: i32, 
-    pub soak: i32, 
-    pub hardness: i32, 
+    pub soak: i32,
+    pub hardness: Option<i32>, 
+    pub attacks: Option<Vec<Attack>>,
+    pub specials: Option<Vec<Special>>,
 }
 
 impl Character {
     pub fn new(name:String, joinbattle:i32, maxhealth:i32) -> Character { 
         Character {
             name,
+            label: None,
             maxhealth,
             health: maxhealth,
+            joinbattle: 0,
             initiative: dice_roll(joinbattle + 3), 
             onslaught: 0,
             done: false,
             evasion: 0,
             parry: 0,
             soak: 0,
-            hardness: 0,
+            hardness: Some(0),
+            attacks: None,
+            specials: None,
         }
     }
     pub fn defaults() -> Vec<Character> {
@@ -48,6 +77,10 @@ impl Character {
             Character::new("Oswald".into(), 4, 12),
             Character::new("Embla".into(), 5, 10), 
         ]
+    }
+    pub fn reset(&mut self) {
+        self.initiative = dice_roll(self.joinbattle + 3);
+        self.health = self.maxhealth;
     }
     pub fn crashed(&self) -> bool {
         self.initiative < 0
