@@ -105,6 +105,16 @@ impl MainWindow {
         self.update();
     }
 
+    fn add_char(&mut self) {
+        let name = crate::textbox::textbox_open("Name: ", 0, 0, 30);
+        if name == "" {
+            return;
+        }
+        let initiative = crate::textbox::textbox_open("Join Battle Dice: ", 0, 0, 30);
+        let char = Character::new(name, initiative.parse::<i32>().unwrap_or(0), 7);
+        self.characters.push(char);
+    }
+
     fn update(&mut self) {
         self.characters.sort_by_key(|c| c.sortkey());
     }
@@ -175,6 +185,7 @@ impl Drawable for MainWindow {
             KEY_ONSLAUGHT => self.set_char_onslaught(), 
             KEY_HEALTH => self.set_char_health(),
             KEY_NEW_ROUND => self.new_round(),
+            KEY_ADD_CHAR => self.add_char(),
             _ => {}, 
         }
     }

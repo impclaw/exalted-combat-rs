@@ -1,3 +1,4 @@
+use rand::Rng;
 
 #[derive(Clone, Copy)]
 pub enum Color {
@@ -35,7 +36,7 @@ impl Character {
             joinbattle, 
             maxhealth,
             health: maxhealth,
-            initiative: 0, 
+            initiative: dice_roll(joinbattle + 3), 
             onslaught: 0,
             done: false,
             evasion: 0,
@@ -51,7 +52,7 @@ impl Character {
         ]
     }
     pub fn crashed(&self) -> bool {
-        self.initiative <= 0
+        self.initiative < 0
     }
     pub fn dead(&self) -> bool {
         self.health <= 0
@@ -65,6 +66,26 @@ impl Character {
             key += 1000;
         }
         return key;
+    }
+}
+
+//Rolls an exalted die roll, ignoring 1s
+fn dice_roll(count:i32) -> i32 {
+    let mut result:i32 = 0;
+    let mut botches:i32 = 0;
+    let mut rng = rand::thread_rng();
+    for _ in 0..count {
+        result += match rng.gen_range(1..=10) {
+            7..=9 => 1, 
+            10 => 2, 
+            1 => { botches += 1; 0 }
+            _ => 0, 
+        };
+    }
+    if result > 0 {
+        return result;
+    } else {
+        return -botches;
     }
 }
 
