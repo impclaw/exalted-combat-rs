@@ -12,6 +12,12 @@ const KEY_HEALTH: i32 = 'h' as i32;
 const KEY_ONSLAUGHT: i32 = 'o' as i32;
 const KEY_INITIATIVE: i32 = 'i' as i32;
 const KEY_MARK_DONE: i32 = 'D' as i32;
+const KEY_ADD_CHAR: i32 = 'a' as i32;
+const KEY_ADD_MONSTER: i32 = 'm' as i32;
+const KEY_DECISIVE_ATTACK:i32 = 'd' as i32;
+const KEY_WITHERING_ATTACK:i32 = 'w' as i32;
+const KEY_REMOVE:i32 = 'r' as i32;
+const KEY_RESET:i32 = 'x' as i32;
 
 pub struct MainWindow {
     leftwin: *mut i8, 
