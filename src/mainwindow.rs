@@ -241,7 +241,42 @@ impl MainWindow {
             Color::Blue, ncurses::COLS() / 4 - 2
         );
 
+        let mut pos = 4;
+        if char.attacks.is_some() {
+            for attack in char.attacks.as_ref().unwrap().iter() {
+                drawcolor(self.rightwin, pos, 2, 
+                    format!("{}: {}d -> {}", attack.name, attack.dice, attack.damage).as_str(), 
+                    Color::Red, ncurses::COLS() / 2 - 1
+                );
+                pos += 1;
+            }
+        }
+        pos += 1;
         
+        if char.specials.is_some() {
+            for special in char.specials.as_ref().unwrap().iter() {
+                if pos + 2 > ncurses::LINES() - 3 {
+                    drawcolor(self.rightwin, pos, 2, "...", 
+                        Color::Yellow, ncurses::COLS() / 2 - 1
+                    );
+                    break;
+                }
+                ncurses::mvwhline(self.rightwin, pos, 1, ncurses::ACS_HLINE(), ncurses::COLS() / 2 - 2);
+                drawrt(self.rightwin, pos + 1, 2, special.name.as_str(), 
+                    Color::Yellow, true, false, false, false, ncurses::COLS() / 2 - 1
+                );
+                pos += 2;
+                for line in textwrap::wrap(&special.text, (ncurses::COLS() / 2 - 2) as usize) {
+                    drawcolor(self.rightwin, pos, 2, &line, 
+                        Color::Yellow, ncurses::COLS() / 2 - 1
+                    );
+                    pos += 1;
+                    if pos > ncurses::LINES() - 3 {
+                        break;
+                    }
+                }
+            }
+        }
     }
     
     fn draw_log(&self) {
