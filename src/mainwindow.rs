@@ -4,7 +4,6 @@ use crate::util::Character;
 
 const HELPSTR: &str = "a.dd d.ecis w.ith r.emov i.nit o.nsl";
 
-const KEY_QUIT: i32 = 'q' as i32;
 const KEY_UP: i32 = 'k' as i32;
 const KEY_DOWN: i32 = 'j' as i32;
 const KEY_NEW_ROUND: i32 = 'n' as i32;
@@ -157,6 +156,23 @@ impl MainWindow {
         self.update();
     }
 
+    fn decisive_attack(&self) {
+        todo!()
+    }
+
+    fn withering_attack(&self) {
+        todo!()
+    }
+
+    fn remove_char(&self) {
+        todo!()
+    }
+
+    fn reset(&self) {
+        todo!()
+    }
+
+
     fn update(&mut self) {
         self.characters.sort_by_key(|c| c.sortkey());
     }
@@ -233,7 +249,6 @@ impl MainWindow {
         ncurses::wborder(self.logwin, 32, 32, 0, 32, 0, 0, 0, 0);
         drawrt(self.logwin, 0, 2, "Combat Log", Color::White, true, true, false, false, 32);
     }
-
 }
 
 impl Drawable for MainWindow {
@@ -256,6 +271,10 @@ impl Drawable for MainWindow {
             KEY_NEW_ROUND => self.new_round(),
             KEY_ADD_CHAR => self.add_char(),
             KEY_ADD_MONSTER => self.add_monster(),
+            KEY_DECISIVE_ATTACK => self.decisive_attack(), 
+            KEY_WITHERING_ATTACK => self.withering_attack(), 
+            KEY_REMOVE => self.remove_char(), 
+            KEY_RESET => self.reset(), 
             _ => {}, 
         }
     }
