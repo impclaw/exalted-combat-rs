@@ -195,14 +195,14 @@ impl MainWindow {
 
             drawrt(self.leftwin, pos, 2, 
                 format!(
-                    "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<13}", 
+                    "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<6}", 
                     format!("{} {}", char.name, char.label.clone().unwrap_or(String::from(""))), 
                     char.initiative, 
                     char.onslaught, 
                     if char.done { "D" } else { "" }, 
                     if char.crashed() { "C" } else { "" }, 
                     format!("{}/{}", char.health, char.maxhealth), 
-                    width = (ncurses::COLS() / 2 - 29) as usize)
+                    width = (ncurses::COLS() / 2 - 23) as usize)
                 .as_str(), 
                 color, false, false, pos == self.selpos, char.done, ncurses::COLS() / 2);
             pos += 1;
