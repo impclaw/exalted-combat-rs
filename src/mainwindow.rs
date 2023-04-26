@@ -17,6 +17,7 @@ const KEY_DECISIVE_ATTACK:i32 = 'd' as i32;
 const KEY_WITHERING_ATTACK:i32 = 'w' as i32;
 const KEY_REMOVE:i32 = 'r' as i32;
 const KEY_RESET:i32 = 'x' as i32;
+const KEY_CANCEL:i32 = 27;
 
 pub struct MainWindow {
     leftwin: *mut i8, 
@@ -210,6 +211,9 @@ impl MainWindow {
         self.update();
     }
 
+    fn cancel(&mut self) {
+        self.action = None;
+    }
 
     fn update(&mut self) {
         self.characters.sort_by_key(|c| c.sortkey());
@@ -357,6 +361,7 @@ impl Drawable for MainWindow {
             KEY_WITHERING_ATTACK => self.withering_attack(), 
             KEY_REMOVE => self.remove_char(), 
             KEY_RESET => self.reset(), 
+            KEY_CANCEL => self.cancel(), 
             _ => {}, 
         }
     }
