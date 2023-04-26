@@ -9,6 +9,7 @@ use util::Color;
 fn main() {
     ncurses::initscr();
     ncurses::noecho();
+    ncurses::set_escdelay(0);
     ncurses::keypad(ncurses::stdscr(), true);
     ncurses::curs_set(ncurses::CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     ncurses::start_color();
