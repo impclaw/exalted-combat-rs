@@ -25,8 +25,19 @@ pub struct MainWindow {
     selpos: i32, 
     markedpos: i32,
     message: Option<String>, 
+    action: Option<Action>, 
     characters: Vec<Character>, 
     monsters: Vec<Character>, 
+}
+
+enum ActionType {
+    Withering, 
+    Decisive, 
+}
+
+struct Action {
+    position: i32, 
+    actiontype: ActionType, 
 }
 
 fn drawrt(win:*mut i8, y:i32, x:i32, text:&str, color:Color, 
@@ -64,6 +75,7 @@ impl MainWindow {
             selpos: 1, 
             markedpos: -1,
             message: None,
+            action: None, 
         };
         window.update();
         return window;
@@ -143,8 +155,43 @@ impl MainWindow {
         todo!()
     }
 
-    fn withering_attack(&self) {
-        todo!()
+    fn withering_attack(&mut self) {
+        if self.action.is_none() {
+            self.action = Some(Action { position: self.selpos, actiontype: ActionType::Withering });
+        } else {
+            let action = match &self.action { Some(x) => x, None => { return; } };
+            if !matches!(action.actiontype, ActionType::Withering) { 
+                return;
+            }
+            let damage = match crate::textbox::textbox_open("Damage (-1: miss)", 0, 0, 30).parse::<i32>() {
+                Ok(x) => x, 
+                Err(_) => { return; }, 
+            }; 
+            let mut crashed = false;
+            {
+                let target = &mut self.characters[self.selpos as usize - 1];
+                if damage >= 0 {
+                    crashed = target.crashed();
+                    target.initiative -= damage;
+                    target.onslaught -= 1;
+                    crashed = target.crashed() && !crashed;
+                }
+            }
+            {
+                let source = &mut self.characters[action.position as usize - 1];
+                if damage < 0 {
+                    source.initiative += 1;
+                } else {
+                    source.initiative += damage;
+                    if crashed {
+                        source.initiative += 5;
+                    }
+                }
+                source.finish();
+            }
+            self.action = None;
+            self.update();
+        }
     }
 
     fn remove_char(&mut self) {
@@ -176,6 +223,8 @@ impl MainWindow {
         for char in self.characters.iter() {
             let color = if self.markedpos == pos - 1 {
                 Color::Blue
+            } else if self.action.is_some() && self.action.as_ref().unwrap().position == pos {
+                Color::Magenta
             } else if char.dead() {
                 Color::Red
             } else if char.crashed() {

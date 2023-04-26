@@ -8,6 +8,7 @@ pub enum Color {
     Blue = 3, 
     Green = 4, 
     Yellow = 5, 
+    Magenta = 6, 
 }
 
 pub trait Drawable {
@@ -98,6 +99,10 @@ impl Character {
     pub fn reset(&mut self) {
         self.initiative = dice_roll(self.joinbattle + 3);
         self.health = self.maxhealth;
+    }
+    pub fn finish(&mut self) {
+        self.done = true;
+        self.onslaught = 0;
     }
     pub fn crashed(&self) -> bool {
         self.initiative < 0
