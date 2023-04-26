@@ -72,6 +72,29 @@ impl Character {
             specials: None,
         }
     }
+    pub fn load_characters() -> Vec<Character> {
+        let mut char_list:Vec<Character> = serde_json::from_str(
+            std::fs::read_to_string("characters.json").expect(
+                "Could not open characters.json"
+            ).as_str()
+        ).expect(
+            "characters.json has invalid formatting"
+        );
+        for char in char_list.iter_mut() {
+            char.reset();
+        }
+        return char_list;
+    }
+    pub fn load_monsters() -> Vec<Character> {
+        let monster_list:Vec<Character> = serde_json::from_str(
+            std::fs::read_to_string("monsters.json").expect(
+                "Could not open monsters.json"
+            ).as_str()
+        ).expect(
+            "monsters.json has invalid formatting"
+        );
+        return monster_list;
+    }
     pub fn reset(&mut self) {
         self.initiative = dice_roll(self.joinbattle + 3);
         self.health = self.maxhealth;
