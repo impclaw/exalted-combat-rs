@@ -166,8 +166,15 @@ impl MainWindow {
         todo!()
     }
 
-    fn remove_char(&self) {
-        todo!()
+    fn remove_char(&mut self) {
+        if self.characters.len() <= 1 {
+            self.message = Some(String::from("Cannot remove last character"));
+            return;
+        }
+        self.characters.remove(self.selpos as usize - 1);
+        if self.selpos as usize > self.characters.len() {
+            self.selpos = self.characters.len() as i32;
+        }
     }
 
     fn reset(&self) {
