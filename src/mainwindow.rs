@@ -24,6 +24,7 @@ pub struct MainWindow {
     logwin: *mut i8, 
     selpos: i32, 
     markedpos: i32,
+    message: Option<String>, 
     characters: Vec<Character>, 
     monsters: Vec<Character>, 
 }
@@ -81,6 +82,7 @@ impl MainWindow {
             monsters: monster_list,
             selpos: 1, 
             markedpos: -1,
+            message: None,
         };
         window.update();
         return window;
@@ -283,6 +285,12 @@ impl MainWindow {
         ncurses::werase(self.logwin);
         ncurses::wborder(self.logwin, 32, 32, 0, 32, 0, 0, 0, 0);
         drawrt(self.logwin, 0, 2, "Combat Log", Color::White, true, true, false, false, 32);
+        if self.message.is_some() {
+        drawrt(self.logwin, ncurses::LINES() / 2 - 1, 2, 
+                &self.message.as_ref().unwrap().as_str(), 
+                Color::Blue, false, false, false, true, ncurses::COLS() / 2
+            );
+        }
     }
 }
 
@@ -294,6 +302,7 @@ impl Drawable for MainWindow {
     }
 
     fn process_events(&mut self, ch:i32) {
+        self.message = None;
         match ch {
             KEY_UP => self.cursor_move(-1),
             KEY_DOWN => self.cursor_move(1),
