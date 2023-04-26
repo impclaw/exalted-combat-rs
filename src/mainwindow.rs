@@ -158,8 +158,9 @@ impl MainWindow {
         }
     }
 
-    fn reset(&self) {
-        todo!()
+    fn reset(&mut self) {
+        self.characters = Character::load_characters();
+        self.update();
     }
 
 
