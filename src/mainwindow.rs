@@ -152,8 +152,40 @@ impl MainWindow {
         self.update();
     }
 
-    fn decisive_attack(&self) {
-        todo!()
+    fn decisive_attack(&mut self) {
+        if self.action.is_none() {
+            self.action = Some(Action { position: self.selpos, actiontype: ActionType::Decisive });
+        } else {
+            let action = match &self.action { Some(x) => x, None => { return; } };
+            if !matches!(action.actiontype, ActionType::Decisive) {
+                return;
+            }
+            let hit = crate::textbox::textbox_open("Hit (dmg/N)?", 0, 0, 30).trim().to_lowercase();
+            if hit == "n" {
+                let source = &mut self.characters[action.position as usize - 1];
+                if source.initiative > 10 {
+                    source.initiative -= 3;
+                } else {
+                    source.initiative -= 2;
+                }
+                source.finish();
+            } else {
+                let damage = match hit.parse::<i32>() {
+                    Ok(x) => x, 
+                    Err(_) => { return; }, 
+                };
+                {
+                    let source = &mut self.characters[action.position as usize - 1];
+                    source.initiative = 3;
+                    source.finish();
+                }
+                let target = &mut self.characters[self.selpos as usize - 1];
+                target.health -= damage;
+
+            }
+            self.action = None;
+            self.update();
+        }
     }
 
     fn withering_attack(&mut self) {
