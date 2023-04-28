@@ -61,7 +61,7 @@ impl Character {
             label: None,
             maxhealth,
             health: maxhealth,
-            joinbattle: 0,
+            joinbattle,
             initiative: 0,
             onslaught: 0,
             done: false,
