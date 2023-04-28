@@ -1,3 +1,5 @@
+use crate::util::{Color, drawcolor, drawtext};
+
 const KEY_ACCEPT: i32 = '\n' as i32;
 const KEY_REJECT: i32 = 27; // ESC Keycode
 const KEY_PRINTABLE_START: i32 = 0x20;
@@ -19,10 +21,8 @@ fn textbox_internal(title: &str, x: i32, y: i32, w: i32, items: Option<&Vec<Stri
     loop {
         ncurses::werase(win);
         ncurses::wborder(win, 32, 32, 0, 32, 0, 0, 0, 0);
-        ncurses::wattron(win, ncurses::A_UNDERLINE());
-        ncurses::mvwaddnstr(win, y + 1, x + 1, title, w - 2);
-        ncurses::wattroff(win, ncurses::A_UNDERLINE());
-        ncurses::mvwaddnstr(win, y + 2, x + 1, text.as_str(), w - 2);
+        drawtext(win, y + 1, x + 1, title, Color::Yellow, true, true, false, false, w - 2);
+        drawcolor(win, y + 2, x + 1, text.as_str(), Color::White, w - 2);
 
         let mut pos = 3;
         selvalue = None;

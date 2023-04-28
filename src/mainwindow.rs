@@ -1,6 +1,7 @@
 use crate::util::Character;
 use crate::util::Color;
 use crate::util::Drawable;
+use crate::util::{drawcolor, drawtext};
 
 const HELPSTR: &str = "a.dd d.ecis w.ith r.emov i.nit o.nsl";
 
@@ -39,53 +40,6 @@ enum ActionType {
 struct Action {
     position: i32,
     actiontype: ActionType,
-}
-
-fn drawrt(
-    win: *mut i8,
-    y: i32,
-    x: i32,
-    text: &str,
-    color: Color,
-    bold: bool,
-    underline: bool,
-    reverse: bool,
-    dim: bool,
-    len: i32,
-) {
-    if bold {
-        ncurses::wattron(win, ncurses::A_BOLD());
-    }
-    if underline {
-        ncurses::wattron(win, ncurses::A_UNDERLINE());
-    }
-    if reverse {
-        ncurses::wattron(win, ncurses::A_REVERSE());
-    }
-    if dim {
-        ncurses::wattron(win, ncurses::A_DIM());
-    }
-
-    ncurses::wattron(win, ncurses::COLOR_PAIR(color as i16));
-    ncurses::mvwaddnstr(win, y, x, text, len);
-    ncurses::wattroff(win, ncurses::COLOR_PAIR(color as i16));
-
-    if bold {
-        ncurses::wattroff(win, ncurses::A_BOLD());
-    }
-    if underline {
-        ncurses::wattroff(win, ncurses::A_UNDERLINE());
-    }
-    if reverse {
-        ncurses::wattroff(win, ncurses::A_REVERSE());
-    }
-    if dim {
-        ncurses::wattroff(win, ncurses::A_DIM());
-    }
-}
-
-fn drawcolor(win: *mut i8, y: i32, x: i32, text: &str, color: Color, len: i32) {
-    drawrt(win, y, x, text, color, false, false, false, false, len);
 }
 
 impl MainWindow {
@@ -306,18 +260,7 @@ impl MainWindow {
     fn draw_char_list(&self) {
         ncurses::werase(self.leftwin);
         ncurses::wborder(self.leftwin, 32, 32, 0, 32, 0, 0, 0, 0);
-        drawrt(
-            self.leftwin,
-            0,
-            2,
-            "Participants",
-            Color::White,
-            true,
-            true,
-            false,
-            false,
-            32,
-        );
+        drawtext(self.leftwin, 0, 2, "Participants", Color::White, true, true, false, false, 32);
         let mut pos: i32 = 1;
         for char in self.characters.iter() {
             let color = if self.markedpos == pos - 1 {
@@ -332,17 +275,13 @@ impl MainWindow {
                 Color::White
             };
 
-            drawrt(
+            drawtext(
                 self.leftwin,
                 pos,
                 2,
                 format!(
                     "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<6}",
-                    format!(
-                        "{} {}",
-                        char.name,
-                        char.label.clone().unwrap_or(String::from(""))
-                    ),
+                    format!("{} {}", char.name, char.label.clone().unwrap_or(String::from(""))),
                     char.initiative,
                     char.onslaught,
                     if char.done { "D" } else { "" },
@@ -374,18 +313,7 @@ impl MainWindow {
     fn draw_details(&self) {
         ncurses::werase(self.rightwin);
         ncurses::wborder(self.rightwin, 32, 32, 0, 32, 0, 0, 0, 0);
-        drawrt(
-            self.rightwin,
-            0,
-            2,
-            "Details",
-            Color::White,
-            true,
-            true,
-            false,
-            false,
-            32,
-        );
+        drawtext(self.rightwin, 0, 2, "Details", Color::White, true, true, false, false, 32);
 
         let char = match self.characters.get(self.selpos as usize - 1) {
             Some(x) => x,
@@ -394,7 +322,7 @@ impl MainWindow {
             }
         };
 
-        drawrt(
+        drawtext(
             self.rightwin,
             1,
             2,
@@ -458,14 +386,7 @@ impl MainWindow {
         if char.specials.is_some() {
             for special in char.specials.as_ref().unwrap().iter() {
                 if pos + 2 > ncurses::LINES() - 3 {
-                    drawcolor(
-                        self.rightwin,
-                        pos,
-                        2,
-                        "...",
-                        Color::Yellow,
-                        ncurses::COLS() / 2 - 1,
-                    );
+                    drawcolor(self.rightwin, pos, 2, "...", Color::Yellow, ncurses::COLS() / 2 - 1);
                     break;
                 }
                 ncurses::mvwhline(
@@ -475,7 +396,7 @@ impl MainWindow {
                     ncurses::ACS_HLINE(),
                     ncurses::COLS() / 2 - 2,
                 );
-                drawrt(
+                drawtext(
                     self.rightwin,
                     pos + 1,
                     2,
@@ -489,14 +410,7 @@ impl MainWindow {
                 );
                 pos += 2;
                 for line in textwrap::wrap(&special.text, (ncurses::COLS() / 2 - 2) as usize) {
-                    drawcolor(
-                        self.rightwin,
-                        pos,
-                        2,
-                        &line,
-                        Color::Yellow,
-                        ncurses::COLS() / 2 - 1,
-                    );
+                    drawcolor(self.rightwin, pos, 2, &line, Color::Yellow, ncurses::COLS() / 2 - 1);
                     pos += 1;
                     if pos > ncurses::LINES() - 3 {
                         break;
@@ -509,20 +423,9 @@ impl MainWindow {
     fn draw_log(&self) {
         ncurses::werase(self.logwin);
         ncurses::wborder(self.logwin, 32, 32, 0, 32, 0, 0, 0, 0);
-        drawrt(
-            self.logwin,
-            0,
-            2,
-            "Combat Log",
-            Color::White,
-            true,
-            true,
-            false,
-            false,
-            32,
-        );
+        drawtext(self.logwin, 0, 2, "Combat Log", Color::White, true, true, false, false, 32);
         if self.message.is_some() {
-            drawrt(
+            drawtext(
                 self.logwin,
                 ncurses::LINES() / 2 - 1,
                 2,
