@@ -17,7 +17,6 @@ fn textbox_internal(title: &str, x: i32, y: i32, w: i32, items: Option<&Vec<Stri
     let h: i32 = ncurses::LINES() - y - 1;
     let win = ncurses::subwin(ncurses::stdscr(), h, w, y, x);
     let mut text = String::new();
-    let mut selvalue: Option<&String> = None;
     loop {
         ncurses::werase(win);
         ncurses::wborder(win, 32, 32, 0, 32, 0, 0, 0, 0);
@@ -25,7 +24,7 @@ fn textbox_internal(title: &str, x: i32, y: i32, w: i32, items: Option<&Vec<Stri
         drawcolor(win, y + 2, x + 1, text.as_str(), Color::White, w - 2);
 
         let mut pos = 3;
-        selvalue = None;
+        let mut selvalue: Option<&String> = None;
         if items.is_some() {
             for item in items
                 .unwrap()
