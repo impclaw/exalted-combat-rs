@@ -1,10 +1,10 @@
 use ncurses;
 mod mainwindow;
-mod util;
 mod textbox;
+mod util;
 
-use util::Drawable;
 use util::Color;
+use util::Drawable;
 
 fn main() {
     ncurses::initscr();

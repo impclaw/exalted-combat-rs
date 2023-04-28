@@ -1,68 +1,68 @@
 use rand::Rng;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy)]
 pub enum Color {
-    White = 1, 
-    Red = 2, 
-    Blue = 3, 
-    Green = 4, 
-    Yellow = 5, 
-    Magenta = 6, 
+    White = 1,
+    Red = 2,
+    Blue = 3,
+    Green = 4,
+    Yellow = 5,
+    Magenta = 6,
 }
 
 pub trait Drawable {
     fn refresh(&self);
     fn render(&self);
-    fn process_events(&mut self, ch:i32);
+    fn process_events(&mut self, ch: i32);
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Attack {
-    pub name: String, 
-    pub dice: i32, 
+    pub name: String,
+    pub dice: i32,
     pub damage: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Special {
-    pub name: String, 
-    pub text: String, 
+    pub name: String,
+    pub text: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Character {
     pub name: String,
     #[serde(skip)]
-    pub label: Option<String>, 
+    pub label: Option<String>,
     #[serde(skip)]
-    pub initiative: i32, 
+    pub initiative: i32,
     pub joinbattle: i32,
     #[serde(skip)]
-    pub onslaught: i32, 
+    pub onslaught: i32,
     #[serde(skip)]
-    pub done: bool, 
+    pub done: bool,
     #[serde(rename = "health")]
-    pub maxhealth: i32, 
+    pub maxhealth: i32,
     #[serde(skip)]
-    pub health: i32, 
-    pub evasion: i32, 
-    pub parry: i32, 
+    pub health: i32,
+    pub evasion: i32,
+    pub parry: i32,
     pub soak: i32,
-    pub hardness: Option<i32>, 
+    pub hardness: Option<i32>,
     pub attacks: Option<Vec<Attack>>,
     pub specials: Option<Vec<Special>>,
 }
 
 impl Character {
-    pub fn new(name:String, joinbattle:i32, maxhealth:i32) -> Character { 
+    pub fn new(name: String, joinbattle: i32, maxhealth: i32) -> Character {
         Character {
             name,
             label: None,
             maxhealth,
             health: maxhealth,
             joinbattle: 0,
-            initiative: 0, 
+            initiative: 0,
             onslaught: 0,
             done: false,
             evasion: 0,
@@ -74,26 +74,24 @@ impl Character {
         }
     }
     pub fn load_characters() -> Vec<Character> {
-        let mut char_list:Vec<Character> = serde_json::from_str(
-            std::fs::read_to_string("characters.json").expect(
-                "Could not open characters.json"
-            ).as_str()
-        ).expect(
-            "characters.json has invalid formatting"
-        );
+        let mut char_list: Vec<Character> = serde_json::from_str(
+            std::fs::read_to_string("characters.json")
+                .expect("Could not open characters.json")
+                .as_str(),
+        )
+        .expect("characters.json has invalid formatting");
         for char in char_list.iter_mut() {
             char.reset();
         }
         return char_list;
     }
     pub fn load_monsters() -> Vec<Character> {
-        let monster_list:Vec<Character> = serde_json::from_str(
-            std::fs::read_to_string("monsters.json").expect(
-                "Could not open monsters.json"
-            ).as_str()
-        ).expect(
-            "monsters.json has invalid formatting"
-        );
+        let monster_list: Vec<Character> = serde_json::from_str(
+            std::fs::read_to_string("monsters.json")
+                .expect("Could not open monsters.json")
+                .as_str(),
+        )
+        .expect("monsters.json has invalid formatting");
         return monster_list;
     }
     pub fn reset(&mut self) {
@@ -123,16 +121,19 @@ impl Character {
 }
 
 //Rolls an exalted die roll, ignoring 1s
-fn dice_roll(count:i32) -> i32 {
-    let mut result:i32 = 0;
-    let mut botches:i32 = 0;
+fn dice_roll(count: i32) -> i32 {
+    let mut result: i32 = 0;
+    let mut botches: i32 = 0;
     let mut rng = rand::thread_rng();
     for _ in 0..count {
         result += match rng.gen_range(1..=10) {
-            7..=9 => 1, 
-            10 => 2, 
-            1 => { botches += 1; 0 }
-            _ => 0, 
+            7..=9 => 1,
+            10 => 2,
+            1 => {
+                botches += 1;
+                0
+            }
+            _ => 0,
         };
     }
     if result > 0 {
@@ -141,4 +142,3 @@ fn dice_roll(count:i32) -> i32 {
         return -botches;
     }
 }
-

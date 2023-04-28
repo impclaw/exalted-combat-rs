@@ -1,6 +1,6 @@
-use crate::util::Drawable;
-use crate::util::Color;
 use crate::util::Character;
+use crate::util::Color;
+use crate::util::Drawable;
 
 const HELPSTR: &str = "a.dd d.ecis w.ith r.emov i.nit o.nsl";
 
@@ -13,52 +13,78 @@ const KEY_INITIATIVE: i32 = 'i' as i32;
 const KEY_MARK_DONE: i32 = 'D' as i32;
 const KEY_ADD_CHAR: i32 = 'a' as i32;
 const KEY_ADD_MONSTER: i32 = 'm' as i32;
-const KEY_DECISIVE_ATTACK:i32 = 'd' as i32;
-const KEY_WITHERING_ATTACK:i32 = 'w' as i32;
-const KEY_REMOVE:i32 = 'r' as i32;
-const KEY_RESET:i32 = 'x' as i32;
-const KEY_CANCEL:i32 = 27;
+const KEY_DECISIVE_ATTACK: i32 = 'd' as i32;
+const KEY_WITHERING_ATTACK: i32 = 'w' as i32;
+const KEY_REMOVE: i32 = 'r' as i32;
+const KEY_RESET: i32 = 'x' as i32;
+const KEY_CANCEL: i32 = 27;
 
 pub struct MainWindow {
-    leftwin: *mut i8, 
-    rightwin: *mut i8, 
-    logwin: *mut i8, 
-    selpos: i32, 
+    leftwin: *mut i8,
+    rightwin: *mut i8,
+    logwin: *mut i8,
+    selpos: i32,
     markedpos: i32,
-    message: Option<String>, 
-    action: Option<Action>, 
-    characters: Vec<Character>, 
-    monsters: Vec<Character>, 
+    message: Option<String>,
+    action: Option<Action>,
+    characters: Vec<Character>,
+    monsters: Vec<Character>,
 }
 
 enum ActionType {
-    Withering, 
-    Decisive, 
+    Withering,
+    Decisive,
 }
 
 struct Action {
-    position: i32, 
-    actiontype: ActionType, 
+    position: i32,
+    actiontype: ActionType,
 }
 
-fn drawrt(win:*mut i8, y:i32, x:i32, text:&str, color:Color, 
-    bold:bool, underline:bool, reverse:bool, dim:bool, len:i32) {
-    if bold { ncurses::wattron(win, ncurses::A_BOLD()); }
-    if underline { ncurses::wattron(win, ncurses::A_UNDERLINE()); }
-    if reverse { ncurses::wattron(win, ncurses::A_REVERSE()); }
-    if dim { ncurses::wattron(win, ncurses::A_DIM()); }
+fn drawrt(
+    win: *mut i8,
+    y: i32,
+    x: i32,
+    text: &str,
+    color: Color,
+    bold: bool,
+    underline: bool,
+    reverse: bool,
+    dim: bool,
+    len: i32,
+) {
+    if bold {
+        ncurses::wattron(win, ncurses::A_BOLD());
+    }
+    if underline {
+        ncurses::wattron(win, ncurses::A_UNDERLINE());
+    }
+    if reverse {
+        ncurses::wattron(win, ncurses::A_REVERSE());
+    }
+    if dim {
+        ncurses::wattron(win, ncurses::A_DIM());
+    }
 
     ncurses::wattron(win, ncurses::COLOR_PAIR(color as i16));
     ncurses::mvwaddnstr(win, y, x, text, len);
     ncurses::wattroff(win, ncurses::COLOR_PAIR(color as i16));
 
-    if bold { ncurses::wattroff(win, ncurses::A_BOLD()); }
-    if underline { ncurses::wattroff(win, ncurses::A_UNDERLINE()); }
-    if reverse { ncurses::wattroff(win, ncurses::A_REVERSE()); }
-    if dim { ncurses::wattroff(win, ncurses::A_DIM()); }
+    if bold {
+        ncurses::wattroff(win, ncurses::A_BOLD());
+    }
+    if underline {
+        ncurses::wattroff(win, ncurses::A_UNDERLINE());
+    }
+    if reverse {
+        ncurses::wattroff(win, ncurses::A_REVERSE());
+    }
+    if dim {
+        ncurses::wattroff(win, ncurses::A_DIM());
+    }
 }
 
-fn drawcolor(win:*mut i8, y:i32, x:i32, text:&str, color:Color, len:i32) {
+fn drawcolor(win: *mut i8, y: i32, x: i32, text: &str, color: Color, len: i32) {
     drawrt(win, y, x, text, color, false, false, false, false, len);
 }
 
@@ -67,22 +93,22 @@ impl MainWindow {
         let midw = ncurses::COLS() / 2;
         let midh = ncurses::LINES() / 2;
 
-        let mut window = MainWindow { 
-            leftwin: ncurses::subwin(ncurses::stdscr(), midh, midw, 0, 0), 
-            rightwin: ncurses::subwin(ncurses::stdscr(), ncurses::LINES(), midw, 0, midw), 
-            logwin: ncurses::subwin(ncurses::stdscr(), midh, midw, midh, 0), 
-            characters: Character::load_characters(), 
+        let mut window = MainWindow {
+            leftwin: ncurses::subwin(ncurses::stdscr(), midh, midw, 0, 0),
+            rightwin: ncurses::subwin(ncurses::stdscr(), ncurses::LINES(), midw, 0, midw),
+            logwin: ncurses::subwin(ncurses::stdscr(), midh, midw, midh, 0),
+            characters: Character::load_characters(),
             monsters: Character::load_monsters(),
-            selpos: 1, 
+            selpos: 1,
             markedpos: -1,
             message: None,
-            action: None, 
+            action: None,
         };
         window.update();
         return window;
     }
 
-    fn cursor_move(&mut self, amount:i32) {
+    fn cursor_move(&mut self, amount: i32) {
         self.selpos += amount;
         if self.selpos > self.characters.len() as i32 {
             self.selpos = self.characters.len() as i32;
@@ -135,9 +161,13 @@ impl MainWindow {
     }
 
     fn add_monster(&mut self) {
-        let list:Vec<String> = self.monsters.iter().map(|x| x.name.clone()).collect();
+        let list: Vec<String> = self.monsters.iter().map(|x| x.name.clone()).collect();
         let selmonster = crate::textbox::textbox_select("Monster: ", 0, 0, 30, &list);
-        let count = self.characters.iter().filter(|x| x.name == selmonster).count();
+        let count = self
+            .characters
+            .iter()
+            .filter(|x| x.name == selmonster)
+            .count();
         let label = char::from_u32(count as u32 + 65);
         for monster in self.monsters.iter() {
             if monster.name == selmonster {
@@ -154,13 +184,23 @@ impl MainWindow {
 
     fn decisive_attack(&mut self) {
         if self.action.is_none() {
-            self.action = Some(Action { position: self.selpos, actiontype: ActionType::Decisive });
+            self.action = Some(Action {
+                position: self.selpos,
+                actiontype: ActionType::Decisive,
+            });
         } else {
-            let action = match &self.action { Some(x) => x, None => { return; } };
+            let action = match &self.action {
+                Some(x) => x,
+                None => {
+                    return;
+                }
+            };
             if !matches!(action.actiontype, ActionType::Decisive) {
                 return;
             }
-            let hit = crate::textbox::textbox_open("Hit (dmg/N)?", 0, 0, 30).trim().to_lowercase();
+            let hit = crate::textbox::textbox_open("Hit (dmg/N)?", 0, 0, 30)
+                .trim()
+                .to_lowercase();
             if hit == "n" {
                 let source = &mut self.characters[action.position as usize - 1];
                 if source.initiative > 10 {
@@ -171,8 +211,10 @@ impl MainWindow {
                 source.finish();
             } else {
                 let damage = match hit.parse::<i32>() {
-                    Ok(x) => x, 
-                    Err(_) => { return; }, 
+                    Ok(x) => x,
+                    Err(_) => {
+                        return;
+                    }
                 };
                 {
                     let source = &mut self.characters[action.position as usize - 1];
@@ -181,7 +223,6 @@ impl MainWindow {
                 }
                 let target = &mut self.characters[self.selpos as usize - 1];
                 target.health -= damage;
-
             }
             self.action = None;
             self.update();
@@ -190,16 +231,27 @@ impl MainWindow {
 
     fn withering_attack(&mut self) {
         if self.action.is_none() {
-            self.action = Some(Action { position: self.selpos, actiontype: ActionType::Withering });
+            self.action = Some(Action {
+                position: self.selpos,
+                actiontype: ActionType::Withering,
+            });
         } else {
-            let action = match &self.action { Some(x) => x, None => { return; } };
-            if !matches!(action.actiontype, ActionType::Withering) { 
+            let action = match &self.action {
+                Some(x) => x,
+                None => {
+                    return;
+                }
+            };
+            if !matches!(action.actiontype, ActionType::Withering) {
                 return;
             }
-            let damage = match crate::textbox::textbox_open("Damage (-1: miss)", 0, 0, 30).parse::<i32>() {
-                Ok(x) => x, 
-                Err(_) => { return; }, 
-            }; 
+            let damage =
+                match crate::textbox::textbox_open("Damage (-1: miss)", 0, 0, 30).parse::<i32>() {
+                    Ok(x) => x,
+                    Err(_) => {
+                        return;
+                    }
+                };
             let mut crashed = false;
             {
                 let target = &mut self.characters[self.selpos as usize - 1];
@@ -254,8 +306,19 @@ impl MainWindow {
     fn draw_char_list(&self) {
         ncurses::werase(self.leftwin);
         ncurses::wborder(self.leftwin, 32, 32, 0, 32, 0, 0, 0, 0);
-        drawrt(self.leftwin, 0, 2, "Participants", Color::White, true, true, false, false, 32);
-        let mut pos:i32 = 1;
+        drawrt(
+            self.leftwin,
+            0,
+            2,
+            "Participants",
+            Color::White,
+            true,
+            true,
+            false,
+            false,
+            32,
+        );
+        let mut pos: i32 = 1;
         for char in self.characters.iter() {
             let color = if self.markedpos == pos - 1 {
                 Color::Blue
@@ -269,82 +332,170 @@ impl MainWindow {
                 Color::White
             };
 
-            drawrt(self.leftwin, pos, 2, 
+            drawrt(
+                self.leftwin,
+                pos,
+                2,
                 format!(
-                    "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<6}", 
-                    format!("{} {}", char.name, char.label.clone().unwrap_or(String::from(""))), 
-                    char.initiative, 
-                    char.onslaught, 
-                    if char.done { "D" } else { "" }, 
-                    if char.crashed() { "C" } else { "" }, 
-                    format!("{}/{}", char.health, char.maxhealth), 
-                    width = (ncurses::COLS() / 2 - 23) as usize)
-                .as_str(), 
-                color, false, false, pos == self.selpos, char.done, ncurses::COLS() / 2);
+                    "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<6}",
+                    format!(
+                        "{} {}",
+                        char.name,
+                        char.label.clone().unwrap_or(String::from(""))
+                    ),
+                    char.initiative,
+                    char.onslaught,
+                    if char.done { "D" } else { "" },
+                    if char.crashed() { "C" } else { "" },
+                    format!("{}/{}", char.health, char.maxhealth),
+                    width = (ncurses::COLS() / 2 - 23) as usize
+                )
+                .as_str(),
+                color,
+                false,
+                false,
+                pos == self.selpos,
+                char.done,
+                ncurses::COLS() / 2,
+            );
             pos += 1;
         }
 
-        drawcolor(self.leftwin, ncurses::LINES() / 2 - 1, 2, HELPSTR, Color::White, ncurses::COLS() / 2 - 4);
+        drawcolor(
+            self.leftwin,
+            ncurses::LINES() / 2 - 1,
+            2,
+            HELPSTR,
+            Color::White,
+            ncurses::COLS() / 2 - 4,
+        );
     }
 
-    fn draw_details(&self) { 
+    fn draw_details(&self) {
         ncurses::werase(self.rightwin);
         ncurses::wborder(self.rightwin, 32, 32, 0, 32, 0, 0, 0, 0);
-        drawrt(self.rightwin, 0, 2, "Details", Color::White, true, true, false, false, 32);
-        
+        drawrt(
+            self.rightwin,
+            0,
+            2,
+            "Details",
+            Color::White,
+            true,
+            true,
+            false,
+            false,
+            32,
+        );
+
         let char = match self.characters.get(self.selpos as usize - 1) {
             Some(x) => x,
-            None => { return; }
+            None => {
+                return;
+            }
         };
-        
-        drawrt(self.rightwin, 1, 2, &char.name, 
-            Color::Green, true, false, false, false, ncurses::COLS() / 2 - 2
+
+        drawrt(
+            self.rightwin,
+            1,
+            2,
+            &char.name,
+            Color::Green,
+            true,
+            false,
+            false,
+            false,
+            ncurses::COLS() / 2 - 2,
         );
-        drawcolor(self.rightwin, 2, 2, 
-            format!("Evasion: {}", char.evasion).as_str(), 
-            Color::Blue, ncurses::COLS() / 4 - 2
+        drawcolor(
+            self.rightwin,
+            2,
+            2,
+            format!("Evasion: {}", char.evasion).as_str(),
+            Color::Blue,
+            ncurses::COLS() / 4 - 2,
         );
-        drawcolor(self.rightwin, 2, ncurses::COLS() / 4 - 1, 
-            format!("Parry:    {}", char.parry).as_str(), 
-            Color::Blue, ncurses::COLS() / 4 - 2
+        drawcolor(
+            self.rightwin,
+            2,
+            ncurses::COLS() / 4 - 1,
+            format!("Parry:    {}", char.parry).as_str(),
+            Color::Blue,
+            ncurses::COLS() / 4 - 2,
         );
-        drawcolor(self.rightwin, 3, 2, 
-            format!("Soak:    {}", char.soak).as_str(), 
-            Color::Blue, ncurses::COLS() / 4 - 2
+        drawcolor(
+            self.rightwin,
+            3,
+            2,
+            format!("Soak:    {}", char.soak).as_str(),
+            Color::Blue,
+            ncurses::COLS() / 4 - 2,
         );
-        drawcolor(self.rightwin, 3, ncurses::COLS() / 4 - 1, 
-            format!("Hardness: {}", char.hardness.unwrap_or(0)).as_str(), 
-            Color::Blue, ncurses::COLS() / 4 - 2
+        drawcolor(
+            self.rightwin,
+            3,
+            ncurses::COLS() / 4 - 1,
+            format!("Hardness: {}", char.hardness.unwrap_or(0)).as_str(),
+            Color::Blue,
+            ncurses::COLS() / 4 - 2,
         );
 
         let mut pos = 4;
         if char.attacks.is_some() {
             for attack in char.attacks.as_ref().unwrap().iter() {
-                drawcolor(self.rightwin, pos, 2, 
-                    format!("{}: {}d -> {}", attack.name, attack.dice, attack.damage).as_str(), 
-                    Color::Red, ncurses::COLS() / 2 - 1
+                drawcolor(
+                    self.rightwin,
+                    pos,
+                    2,
+                    format!("{}: {}d -> {}", attack.name, attack.dice, attack.damage).as_str(),
+                    Color::Red,
+                    ncurses::COLS() / 2 - 1,
                 );
                 pos += 1;
             }
         }
         pos += 1;
-        
+
         if char.specials.is_some() {
             for special in char.specials.as_ref().unwrap().iter() {
                 if pos + 2 > ncurses::LINES() - 3 {
-                    drawcolor(self.rightwin, pos, 2, "...", 
-                        Color::Yellow, ncurses::COLS() / 2 - 1
+                    drawcolor(
+                        self.rightwin,
+                        pos,
+                        2,
+                        "...",
+                        Color::Yellow,
+                        ncurses::COLS() / 2 - 1,
                     );
                     break;
                 }
-                ncurses::mvwhline(self.rightwin, pos, 1, ncurses::ACS_HLINE(), ncurses::COLS() / 2 - 2);
-                drawrt(self.rightwin, pos + 1, 2, special.name.as_str(), 
-                    Color::Yellow, true, false, false, false, ncurses::COLS() / 2 - 1
+                ncurses::mvwhline(
+                    self.rightwin,
+                    pos,
+                    1,
+                    ncurses::ACS_HLINE(),
+                    ncurses::COLS() / 2 - 2,
+                );
+                drawrt(
+                    self.rightwin,
+                    pos + 1,
+                    2,
+                    special.name.as_str(),
+                    Color::Yellow,
+                    true,
+                    false,
+                    false,
+                    false,
+                    ncurses::COLS() / 2 - 1,
                 );
                 pos += 2;
                 for line in textwrap::wrap(&special.text, (ncurses::COLS() / 2 - 2) as usize) {
-                    drawcolor(self.rightwin, pos, 2, &line, 
-                        Color::Yellow, ncurses::COLS() / 2 - 1
+                    drawcolor(
+                        self.rightwin,
+                        pos,
+                        2,
+                        &line,
+                        Color::Yellow,
+                        ncurses::COLS() / 2 - 1,
                     );
                     pos += 1;
                     if pos > ncurses::LINES() - 3 {
@@ -354,15 +505,34 @@ impl MainWindow {
             }
         }
     }
-    
+
     fn draw_log(&self) {
         ncurses::werase(self.logwin);
         ncurses::wborder(self.logwin, 32, 32, 0, 32, 0, 0, 0, 0);
-        drawrt(self.logwin, 0, 2, "Combat Log", Color::White, true, true, false, false, 32);
+        drawrt(
+            self.logwin,
+            0,
+            2,
+            "Combat Log",
+            Color::White,
+            true,
+            true,
+            false,
+            false,
+            32,
+        );
         if self.message.is_some() {
-        drawrt(self.logwin, ncurses::LINES() / 2 - 1, 2, 
-                &self.message.as_ref().unwrap().as_str(), 
-                Color::Blue, false, false, false, true, ncurses::COLS() / 2
+            drawrt(
+                self.logwin,
+                ncurses::LINES() / 2 - 1,
+                2,
+                &self.message.as_ref().unwrap().as_str(),
+                Color::Blue,
+                false,
+                false,
+                false,
+                true,
+                ncurses::COLS() / 2,
             );
         }
     }
@@ -375,26 +545,26 @@ impl Drawable for MainWindow {
         ncurses::wrefresh(self.logwin);
     }
 
-    fn process_events(&mut self, ch:i32) {
+    fn process_events(&mut self, ch: i32) {
         self.message = None;
         match ch {
             KEY_UP => self.cursor_move(-1),
             KEY_DOWN => self.cursor_move(1),
-            ncurses::KEY_UP => self.cursor_move(-1), 
+            ncurses::KEY_UP => self.cursor_move(-1),
             ncurses::KEY_DOWN => self.cursor_move(1),
             KEY_MARK_DONE => self.mark_done(),
             KEY_INITIATIVE => self.set_char_initiative(),
-            KEY_ONSLAUGHT => self.set_char_onslaught(), 
+            KEY_ONSLAUGHT => self.set_char_onslaught(),
             KEY_HEALTH => self.set_char_health(),
             KEY_NEW_ROUND => self.new_round(),
             KEY_ADD_CHAR => self.add_char(),
             KEY_ADD_MONSTER => self.add_monster(),
-            KEY_DECISIVE_ATTACK => self.decisive_attack(), 
-            KEY_WITHERING_ATTACK => self.withering_attack(), 
-            KEY_REMOVE => self.remove_char(), 
-            KEY_RESET => self.reset(), 
-            KEY_CANCEL => self.cancel(), 
-            _ => {}, 
+            KEY_DECISIVE_ATTACK => self.decisive_attack(),
+            KEY_WITHERING_ATTACK => self.withering_attack(),
+            KEY_REMOVE => self.remove_char(),
+            KEY_RESET => self.reset(),
+            KEY_CANCEL => self.cancel(),
+            _ => {}
         }
     }
 

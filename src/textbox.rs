@@ -3,19 +3,19 @@ const KEY_REJECT: i32 = 27; // ESC Keycode
 const KEY_PRINTABLE_START: i32 = 0x20;
 const KEY_PRINTABLE_END: i32 = 0x7e;
 
-pub fn textbox_open(title: &str, x:i32, y:i32, w:i32) -> String {
+pub fn textbox_open(title: &str, x: i32, y: i32, w: i32) -> String {
     textbox_internal(title, x, y, w, None)
 }
 
-pub fn textbox_select(title: &str, x:i32, y:i32, w:i32, items:&Vec<String>) -> String {
+pub fn textbox_select(title: &str, x: i32, y: i32, w: i32, items: &Vec<String>) -> String {
     textbox_internal(title, x, y, w, Some(&items))
 }
 
-fn textbox_internal(title: &str, x:i32, y:i32, w:i32, items:Option<&Vec<String>>) -> String {
+fn textbox_internal(title: &str, x: i32, y: i32, w: i32, items: Option<&Vec<String>>) -> String {
     let h: i32 = ncurses::LINES() - y - 1;
     let win = ncurses::subwin(ncurses::stdscr(), h, w, y, x);
     let mut text = String::new();
-    let mut selvalue:Option<&String> = None;
+    let mut selvalue: Option<&String> = None;
     loop {
         ncurses::werase(win);
         ncurses::wborder(win, 32, 32, 0, 32, 0, 0, 0, 0);
@@ -27,7 +27,11 @@ fn textbox_internal(title: &str, x:i32, y:i32, w:i32, items:Option<&Vec<String>>
         let mut pos = 3;
         selvalue = None;
         if items.is_some() {
-            for item in items.unwrap().iter().filter(|x| x.to_lowercase().contains(&text.to_lowercase())) {
+            for item in items
+                .unwrap()
+                .iter()
+                .filter(|x| x.to_lowercase().contains(&text.to_lowercase()))
+            {
                 if pos == 3 {
                     selvalue = Some(&item);
                     ncurses::wattron(win, ncurses::A_REVERSE());
@@ -54,9 +58,8 @@ fn textbox_internal(title: &str, x:i32, y:i32, w:i32, items:Option<&Vec<String>>
         } else if input == KEY_REJECT {
             text.clear();
             return text;
-        } else if input >= KEY_PRINTABLE_START && input <= KEY_PRINTABLE_END { 
-            text.push(char::from_u32(input as u32).unwrap_or('.')); 
+        } else if input >= KEY_PRINTABLE_START && input <= KEY_PRINTABLE_END {
+            text.push(char::from_u32(input as u32).unwrap_or('.'));
         }
     }
 }
-
