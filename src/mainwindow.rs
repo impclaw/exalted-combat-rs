@@ -76,47 +76,51 @@ impl MainWindow {
         self.update()
     }
 
+    fn get_selected_char_mut(&mut self) -> &mut Character {
+        return &mut self.characters[self.selpos as usize - 1];
+    }
+
     fn set_char_initiative(&mut self) {
-        let mut char = &mut self.characters[self.selpos as usize - 1];
-        let result = crate::textbox::textbox_open("Initiative: ", 0, 0, 30);
+        let mut char = &mut self.get_selected_char_mut();
+        let result = crate::textbox::textbox_open("Initiative: ");
         char.initiative = result.parse::<i32>().unwrap_or(char.initiative);
-        self.update();
+        self.update()
     }
 
     fn set_char_onslaught(&mut self) {
         let mut char = &mut self.characters[self.selpos as usize - 1];
-        let result = crate::textbox::textbox_open("Onslaught: ", 0, 0, 30);
+        let result = crate::textbox::textbox_open("Onslaught: ");
         char.onslaught = result.parse::<i32>().unwrap_or(char.onslaught);
         self.update();
     }
 
     fn set_char_health(&mut self) {
         let mut char = &mut self.characters[self.selpos as usize - 1];
-        let result = crate::textbox::textbox_open("Health: ", 0, 0, 30);
+        let result = crate::textbox::textbox_open("Health: ");
         char.health = result.parse::<i32>().unwrap_or(char.health);
         self.update();
     }
 
     fn new_round(&mut self) {
         for char in &mut self.characters {
-            char.done = false;
+            char.ready();
         }
         self.update();
     }
 
     fn add_char(&mut self) {
-        let name = crate::textbox::textbox_open("Name: ", 0, 0, 30);
+        let name = crate::textbox::textbox_open("Name: ");
         if name == "" {
             return;
         }
-        let initiative = crate::textbox::textbox_open("Join Battle Dice: ", 0, 0, 30);
-        let char = Character::new(name, initiative.parse::<i32>().unwrap_or(0), 7);
+        let joinbattle = crate::textbox::textbox_open("Join Battle Dice: ");
+        let char = Character::new(name, joinbattle.parse::<i32>().unwrap_or(0), 7);
         self.characters.push(char);
     }
 
     fn add_monster(&mut self) {
         let list: Vec<String> = self.monsters.iter().map(|x| x.name.clone()).collect();
-        let selmonster = crate::textbox::textbox_select("Monster: ", 0, 0, 30, &list);
+        let selmonster = crate::textbox::textbox_select("Monster: ", &list);
         let count = self
             .characters
             .iter()
@@ -152,7 +156,7 @@ impl MainWindow {
             if !matches!(action.actiontype, ActionType::Decisive) {
                 return;
             }
-            let hit = crate::textbox::textbox_open("Hit (dmg/N)?", 0, 0, 30)
+            let hit = crate::textbox::textbox_open("Hit (dmg/N)?")
                 .trim()
                 .to_lowercase();
             if hit == "n" {
@@ -199,13 +203,12 @@ impl MainWindow {
             if !matches!(action.actiontype, ActionType::Withering) {
                 return;
             }
-            let damage =
-                match crate::textbox::textbox_open("Damage (-1: miss)", 0, 0, 30).parse::<i32>() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        return;
-                    }
-                };
+            let damage = match crate::textbox::textbox_open("Damage (-1: miss)").parse::<i32>() {
+                Ok(x) => x,
+                Err(_) => {
+                    return;
+                }
+            };
             let mut crashed = false;
             {
                 let target = &mut self.characters[self.selpos as usize - 1];

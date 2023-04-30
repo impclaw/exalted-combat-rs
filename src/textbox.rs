@@ -1,27 +1,27 @@
-use crate::util::{Color, drawcolor, drawtext};
+use crate::util::{drawcolor, drawtext, Color};
 
 const KEY_ACCEPT: i32 = '\n' as i32;
 const KEY_REJECT: i32 = 27; // ESC Keycode
 const KEY_PRINTABLE_START: i32 = 0x20;
 const KEY_PRINTABLE_END: i32 = 0x7e;
+const WND_WIDTH: i32 = 30;
 
-pub fn textbox_open(title: &str, x: i32, y: i32, w: i32) -> String {
-    textbox_internal(title, x, y, w, None)
+pub fn textbox_open(title: &str) -> String {
+    textbox_internal(title, None)
 }
 
-pub fn textbox_select(title: &str, x: i32, y: i32, w: i32, items: &Vec<String>) -> String {
-    textbox_internal(title, x, y, w, Some(&items))
+pub fn textbox_select(title: &str, items: &Vec<String>) -> String {
+    textbox_internal(title, Some(&items))
 }
 
-fn textbox_internal(title: &str, x: i32, y: i32, w: i32, items: Option<&Vec<String>>) -> String {
-    let h: i32 = ncurses::LINES() - y - 1;
-    let win = ncurses::subwin(ncurses::stdscr(), h, w, y, x);
+fn textbox_internal(title: &str, items: Option<&Vec<String>>) -> String {
+    let win = ncurses::subwin(ncurses::stdscr(), ncurses::LINES() - 1, WND_WIDTH, 0, 0);
     let mut text = String::new();
     loop {
         ncurses::werase(win);
         ncurses::wborder(win, 32, 32, 0, 32, 0, 0, 0, 0);
-        drawtext(win, y + 1, x + 1, title, Color::Yellow, true, true, false, false, w - 2);
-        drawcolor(win, y + 2, x + 1, text.as_str(), Color::White, w - 2);
+        drawtext(win, 1, 1, title, Color::Yellow, true, true, false, false, WND_WIDTH - 2);
+        drawcolor(win, 2, 1, text.as_str(), Color::White, WND_WIDTH - 2);
 
         let mut pos = 3;
         let mut selvalue: Option<&String> = None;
@@ -35,12 +35,12 @@ fn textbox_internal(title: &str, x: i32, y: i32, w: i32, items: Option<&Vec<Stri
                     selvalue = Some(&item);
                     ncurses::wattron(win, ncurses::A_REVERSE());
                 }
-                ncurses::mvwaddnstr(win, y + pos, x + 1, item.as_str(), w);
+                ncurses::mvwaddnstr(win, pos, 1, item.as_str(), WND_WIDTH);
                 if pos == 3 {
                     ncurses::wattroff(win, ncurses::A_REVERSE());
                 }
                 pos += 1;
-                if pos > ncurses::LINES() - y - 2 {
+                if pos > ncurses::LINES() - 2 {
                     break;
                 }
             }

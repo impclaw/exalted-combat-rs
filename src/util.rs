@@ -118,6 +118,9 @@ impl Character {
         }
         return key;
     }
+    pub fn ready(&mut self) {
+        self.done = false;
+    }
 }
 
 pub fn drawtext(
