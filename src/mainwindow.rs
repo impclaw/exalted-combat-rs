@@ -1,4 +1,4 @@
-use crate::util::Character;
+use crate::combat::Character;
 use crate::util::Color;
 use crate::util::Drawable;
 use crate::util::{drawcolor, drawtext};
