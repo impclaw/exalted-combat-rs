@@ -10,11 +10,11 @@ pub fn textbox_open(title: &str) -> String {
     textbox_internal(title, None)
 }
 
-pub fn textbox_select(title: &str, items: &Vec<String>) -> String {
+pub fn textbox_select(title: &str, items: &Vec<&str>) -> String {
     textbox_internal(title, Some(&items))
 }
 
-fn textbox_internal(title: &str, items: Option<&Vec<String>>) -> String {
+fn textbox_internal(title: &str, items: Option<&Vec<&str>>) -> String {
     let win = ncurses::subwin(ncurses::stdscr(), ncurses::LINES() - 1, WND_WIDTH, 0, 0);
     let mut text = String::new();
     loop {
@@ -24,7 +24,7 @@ fn textbox_internal(title: &str, items: Option<&Vec<String>>) -> String {
         drawcolor(win, 2, 1, text.as_str(), Color::White, WND_WIDTH - 2);
 
         let mut pos = 3;
-        let mut selvalue: Option<&String> = None;
+        let mut selvalue: Option<&str> = None;
         if items.is_some() {
             for item in items
                 .unwrap()
@@ -32,10 +32,10 @@ fn textbox_internal(title: &str, items: Option<&Vec<String>>) -> String {
                 .filter(|x| x.to_lowercase().contains(&text.to_lowercase()))
             {
                 if pos == 3 {
-                    selvalue = Some(&item);
+                    selvalue = Some(item);
                     ncurses::wattron(win, ncurses::A_REVERSE());
                 }
-                ncurses::mvwaddnstr(win, pos, 1, item.as_str(), WND_WIDTH);
+                ncurses::mvwaddnstr(win, pos, 1, item, WND_WIDTH);
                 if pos == 3 {
                     ncurses::wattroff(win, ncurses::A_REVERSE());
                 }
@@ -51,7 +51,7 @@ fn textbox_internal(title: &str, items: Option<&Vec<String>>) -> String {
         if input == KEY_ACCEPT && selvalue.is_none() {
             return text;
         } else if input == KEY_ACCEPT && selvalue.is_some() {
-            return selvalue.unwrap().clone();
+            return selvalue.unwrap_or("").to_string();
         } else if input == ncurses::KEY_BACKSPACE {
             text.pop();
         } else if input == KEY_REJECT {

@@ -1,8 +1,8 @@
 use ncurses;
+mod combat;
 mod mainwindow;
 mod textbox;
 mod util;
-mod combat;
 
 use util::Color;
 use util::Drawable;

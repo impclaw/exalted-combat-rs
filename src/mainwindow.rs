@@ -1,4 +1,5 @@
-use crate::combat::Character;
+use crate::combat::{Character, Encounter, MonsterDB};
+use crate::textbox::{textbox_open, textbox_select};
 use crate::util::Color;
 use crate::util::Drawable;
 use crate::util::{drawcolor, drawtext};
@@ -28,18 +29,13 @@ pub struct MainWindow {
     markedpos: i32,
     message: Option<String>,
     action: Option<Action>,
-    characters: Vec<Character>,
-    monsters: Vec<Character>,
+    encounter: Encounter,
+    monsterdb: MonsterDB,
 }
 
-enum ActionType {
-    Withering,
-    Decisive,
-}
-
+#[derive(Clone)]
 struct Action {
     position: i32,
-    actiontype: ActionType,
 }
 
 impl MainWindow {
@@ -51,213 +47,161 @@ impl MainWindow {
             leftwin: ncurses::subwin(ncurses::stdscr(), midh, midw, 0, 0),
             rightwin: ncurses::subwin(ncurses::stdscr(), ncurses::LINES(), midw, 0, midw),
             logwin: ncurses::subwin(ncurses::stdscr(), midh, midw, midh, 0),
-            characters: Character::load_characters(),
-            monsters: Character::load_monsters(),
+            encounter: Encounter::new(),
+            monsterdb: MonsterDB::load(),
             selpos: 1,
             markedpos: -1,
             message: None,
             action: None,
         };
-        window.update();
+        window.encounter.update();
         return window;
     }
 
     fn cursor_move(&mut self, amount: i32) {
         self.selpos += amount;
-        if self.selpos > self.characters.len() as i32 {
-            self.selpos = self.characters.len() as i32;
+        if self.selpos > self.encounter.charcount() as i32 {
+            self.selpos = self.encounter.charcount() as i32;
         } else if self.selpos < 1 {
             self.selpos = 1
         }
     }
 
     fn mark_done(&mut self) {
-        self.characters[self.selpos as usize - 1].done ^= true;
-        self.update()
+        self.get_selected_char_mut().done ^= true;
+        self.encounter.update()
+    }
+
+    fn get_char_by_index(&self, index: i32) -> &Character {
+        return match self.encounter.char_at(index as usize - 1) {
+            Some(x) => x,
+            None => {
+                panic!("Selected character out of bounds");
+            }
+        };
+    }
+
+    fn get_char_by_index_mut(&mut self, index: i32) -> &mut Character {
+        return match self.encounter.char_at_mut(index as usize - 1) {
+            Some(x) => x,
+            None => {
+                panic!("Selected character out of bounds");
+            }
+        };
+    }
+
+    fn get_selected_char(&self) -> &Character {
+        return self.get_char_by_index(self.selpos);
     }
 
     fn get_selected_char_mut(&mut self) -> &mut Character {
-        return &mut self.characters[self.selpos as usize - 1];
+        return self.get_char_by_index_mut(self.selpos);
+    }
+
+    fn get_action_source_mut(&mut self, action: &Action) -> &mut Character {
+        return self.get_char_by_index_mut(action.position);
     }
 
     fn set_char_initiative(&mut self) {
         let mut char = &mut self.get_selected_char_mut();
-        let result = crate::textbox::textbox_open("Initiative: ");
+        let result = textbox_open("Initiative: ");
         char.initiative = result.parse::<i32>().unwrap_or(char.initiative);
-        self.update()
+        self.encounter.update();
     }
 
     fn set_char_onslaught(&mut self) {
-        let mut char = &mut self.characters[self.selpos as usize - 1];
-        let result = crate::textbox::textbox_open("Onslaught: ");
+        let mut char = &mut self.get_selected_char_mut();
+        let result = textbox_open("Onslaught: ");
         char.onslaught = result.parse::<i32>().unwrap_or(char.onslaught);
-        self.update();
+        self.encounter.update();
     }
 
     fn set_char_health(&mut self) {
-        let mut char = &mut self.characters[self.selpos as usize - 1];
-        let result = crate::textbox::textbox_open("Health: ");
+        let mut char = &mut self.get_selected_char_mut();
+        let result = textbox_open("Health: ");
         char.health = result.parse::<i32>().unwrap_or(char.health);
-        self.update();
+        self.encounter.update();
     }
 
     fn new_round(&mut self) {
-        for char in &mut self.characters {
-            char.ready();
-        }
-        self.update();
+        self.encounter.new_round();
     }
 
     fn add_char(&mut self) {
-        let name = crate::textbox::textbox_open("Name: ");
+        let name = textbox_open("Name: ");
         if name == "" {
             return;
         }
-        let joinbattle = crate::textbox::textbox_open("Join Battle Dice: ");
+        let joinbattle = textbox_open("Join Battle Dice: ");
         let char = Character::new(name, joinbattle.parse::<i32>().unwrap_or(0), 7);
-        self.characters.push(char);
+        self.encounter.add_char(char);
     }
 
     fn add_monster(&mut self) {
-        let list: Vec<String> = self.monsters.iter().map(|x| x.name.clone()).collect();
-        let selmonster = crate::textbox::textbox_select("Monster: ", &list);
-        let count = self
-            .characters
-            .iter()
-            .filter(|x| x.name == selmonster)
-            .count();
-        let label = char::from_u32(count as u32 + 65);
-        for monster in self.monsters.iter() {
-            if monster.name == selmonster {
-                let mut monster_copy = monster.clone();
-                if label.is_some() {
-                    monster_copy.label = Some(label.unwrap().to_string());
-                }
-                monster_copy.reset();
-                self.characters.push(monster_copy);
+        let selmonster = textbox_select("Monster: ", &self.monsterdb.get_monster_names());
+        let label = char::from_u32(self.encounter.count_name(selmonster.as_str()) as u32 + 65);
+        match self.monsterdb.get_monster_by_name(selmonster.as_str()) {
+            Some(mut x) => {
+                x.label = label;
+                self.encounter.add_char(x);
             }
-        }
-        self.update();
-    }
-
-    fn decisive_attack(&mut self) {
-        if self.action.is_none() {
-            self.action = Some(Action {
-                position: self.selpos,
-                actiontype: ActionType::Decisive,
-            });
-        } else {
-            let action = match &self.action {
-                Some(x) => x,
-                None => {
-                    return;
-                }
-            };
-            if !matches!(action.actiontype, ActionType::Decisive) {
-                return;
-            }
-            let hit = crate::textbox::textbox_open("Hit (dmg/N)?")
-                .trim()
-                .to_lowercase();
-            if hit == "n" {
-                let source = &mut self.characters[action.position as usize - 1];
-                if source.initiative > 10 {
-                    source.initiative -= 3;
-                } else {
-                    source.initiative -= 2;
-                }
-                source.finish();
-            } else {
-                let damage = match hit.parse::<i32>() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        return;
-                    }
-                };
-                {
-                    let source = &mut self.characters[action.position as usize - 1];
-                    source.initiative = 3;
-                    source.finish();
-                }
-                let target = &mut self.characters[self.selpos as usize - 1];
-                target.health -= damage;
-            }
-            self.action = None;
-            self.update();
+            None => {}
         }
     }
 
-    fn withering_attack(&mut self) {
-        if self.action.is_none() {
-            self.action = Some(Action {
-                position: self.selpos,
-                actiontype: ActionType::Withering,
-            });
+    fn select_target(&mut self) {
+        self.action = Some(Action {
+            position: self.selpos,
+        });
+    }
+
+    fn decisive_attack(&mut self, action: &Action) {
+        let hit = textbox_open("Hit (dmg/N)?").trim().to_lowercase();
+        if hit == "n" {
+            self.get_action_source_mut(action).do_decisive_miss();
         } else {
-            let action = match &self.action {
-                Some(x) => x,
-                None => {
-                    return;
+            match hit.parse::<i32>() {
+                Ok(x) => {
+                    self.get_action_source_mut(action).do_decisive_hit();
+                    self.get_selected_char_mut().take_decisive_hit(x);
                 }
+                Err(_) => {}
             };
-            if !matches!(action.actiontype, ActionType::Withering) {
-                return;
-            }
-            let damage = match crate::textbox::textbox_open("Damage (-1: miss)").parse::<i32>() {
-                Ok(x) => x,
-                Err(_) => {
-                    return;
-                }
-            };
-            let mut crashed = false;
-            {
-                let target = &mut self.characters[self.selpos as usize - 1];
-                if damage >= 0 {
-                    crashed = target.crashed();
-                    target.initiative -= damage;
-                    target.onslaught -= 1;
-                    crashed = target.crashed() && !crashed;
-                }
-            }
-            {
-                let source = &mut self.characters[action.position as usize - 1];
-                if damage < 0 {
-                    source.initiative += 1;
-                } else {
-                    source.initiative += damage;
-                    if crashed {
-                        source.initiative += 5;
-                    }
-                }
-                source.finish();
-            }
-            self.action = None;
-            self.update();
         }
+        self.encounter.update();
+        self.reset();
+    }
+
+    fn withering_attack(&mut self, action: &Action) {
+        match textbox_open("Damage (-1: miss)").parse::<i32>() {
+            Ok(x) => {
+                let crashed = self.get_selected_char_mut().take_withering_hit(x);
+                self.get_action_source_mut(action)
+                    .do_withering_hit(x, crashed);
+            }
+            Err(_) => {}
+        };
+        self.encounter.update();
+        self.reset();
     }
 
     fn remove_char(&mut self) {
-        if self.characters.len() <= 1 {
+        if self.encounter.charcount() <= 1 {
             self.message = Some(String::from("Cannot remove last character"));
             return;
         }
-        self.characters.remove(self.selpos as usize - 1);
-        if self.selpos as usize > self.characters.len() {
-            self.selpos = self.characters.len() as i32;
+        self.encounter.removechar(self.selpos as usize - 1);
+        if self.selpos as usize > self.encounter.charcount() {
+            self.selpos = self.encounter.charcount() as i32;
         }
     }
 
     fn reset(&mut self) {
-        self.characters = Character::load_characters();
-        self.update();
+        self.encounter.reset();
     }
 
     fn cancel(&mut self) {
         self.action = None;
-    }
-
-    fn update(&mut self) {
-        self.characters.sort_by_key(|c| c.sortkey());
     }
 
     fn draw_char_list(&self) {
@@ -265,7 +209,7 @@ impl MainWindow {
         ncurses::wborder(self.leftwin, 32, 32, 0, 32, 0, 0, 0, 0);
         drawtext(self.leftwin, 0, 2, "Participants", Color::White, true, true, false, false, 32);
         let mut pos: i32 = 1;
-        for char in self.characters.iter() {
+        for char in self.encounter.char_iter() {
             let color = if self.markedpos == pos - 1 {
                 Color::Blue
             } else if self.action.is_some() && self.action.as_ref().unwrap().position == pos {
@@ -284,7 +228,7 @@ impl MainWindow {
                 2,
                 format!(
                     "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<6}",
-                    format!("{} {}", char.name, char.label.clone().unwrap_or(String::from(""))),
+                    format!("{} {}", char.name, char.label.clone().unwrap_or(' ')),
                     char.initiative,
                     char.onslaught,
                     if char.done { "D" } else { "" },
@@ -318,13 +262,7 @@ impl MainWindow {
         ncurses::wborder(self.rightwin, 32, 32, 0, 32, 0, 0, 0, 0);
         drawtext(self.rightwin, 0, 2, "Details", Color::White, true, true, false, false, 32);
 
-        let char = match self.characters.get(self.selpos as usize - 1) {
-            Some(x) => x,
-            None => {
-                return;
-            }
-        };
-
+        let char = self.get_selected_char();
         drawtext(
             self.rightwin,
             1,
@@ -465,8 +403,14 @@ impl Drawable for MainWindow {
             KEY_NEW_ROUND => self.new_round(),
             KEY_ADD_CHAR => self.add_char(),
             KEY_ADD_MONSTER => self.add_monster(),
-            KEY_DECISIVE_ATTACK => self.decisive_attack(),
-            KEY_WITHERING_ATTACK => self.withering_attack(),
+            KEY_DECISIVE_ATTACK => match self.action.clone() {
+                Some(x) => self.decisive_attack(&x),
+                None => self.select_target(),
+            },
+            KEY_WITHERING_ATTACK => match self.action.clone() {
+                Some(x) => self.withering_attack(&x),
+                None => self.select_target(),
+            },
             KEY_REMOVE => self.remove_char(),
             KEY_RESET => self.reset(),
             KEY_CANCEL => self.cancel(),
