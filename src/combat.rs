@@ -144,8 +144,14 @@ impl Character {
         }
         self.finish();
     }
+    pub fn hardness(&self) -> i32 {
+        return match self.crashed() {
+            true => 0, 
+            false => self.hardness
+        };
+    }
     pub fn take_decisive_hit(&mut self, damage: i32) {
-        if damage > self.hardness {
+        if damage > self.hardness() {
             self.health -= damage;
         }
     }

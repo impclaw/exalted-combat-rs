@@ -354,7 +354,7 @@ impl MainWindow {
             self.rightwin,
             3,
             ncurses::COLS() / 4 - 1,
-            format!("Hardness: {}", char.hardness).as_str(),
+            format!("Hardness: {}", char.hardness()).as_str(),
             Color::Blue,
             ncurses::COLS() / 4 - 2,
         );
