@@ -86,7 +86,7 @@ fn decisive_hit_hardness() {
     let mut defender = Character::new(String::from("Test"), 0, 5);
 
     defender.initiative = 5;
-    defender.hardness = Some(5);
+    defender.hardness = 5;
     defender.take_decisive_hit(3);
     assert_eq!(defender.health, 5);
     
