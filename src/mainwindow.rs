@@ -22,9 +22,26 @@ const KEY_RESET: i32 = 'x' as i32;
 const KEY_CANCEL: i32 = 27;
 
 macro_rules! log {
-    ($mand:expr, $($t:tt)*) => {{
+    ($mand:expr, $($t:tt)*) => {
         $mand.encounter.log(format!($($t)*));
-    }};
+    };
+}
+
+macro_rules! set_char_value {
+    ($self:ident, $name:literal, $title:literal, $val:ident) => {{
+        let mut char = &mut $self.get_selected_char_mut();
+        let result = textbox_open($title);
+        char.$val = result.parse::<i32>().unwrap_or(char.$val);
+    }
+    log!(
+        $self,
+        "{} {} set to {}. ",
+        $name,
+        $self.get_selected_char().name,
+        $self.get_selected_char().initiative
+    );
+    $self.encounter.update();
+    $self.save_char_list();};
 }
 
 pub struct MainWindow {
@@ -113,54 +130,6 @@ impl MainWindow {
 
     fn get_action_source_mut(&mut self, action: &Action) -> &mut Character {
         return self.get_char_by_index_mut(action.position);
-    }
-
-    fn set_char_initiative(&mut self) {
-        {
-            let mut char = &mut self.get_selected_char_mut();
-            let result = textbox_open("Initiative: ");
-            char.initiative = result.parse::<i32>().unwrap_or(char.initiative);
-        }
-        log!(
-            self,
-            "{} initiative set to {}. ",
-            self.get_selected_char().name,
-            self.get_selected_char().initiative
-        );
-        self.encounter.update();
-        self.save_char_list();
-    }
-
-    fn set_char_onslaught(&mut self) {
-        {
-            let mut char = &mut self.get_selected_char_mut();
-            let result = textbox_open("Onslaught: ");
-            char.onslaught = result.parse::<i32>().unwrap_or(char.onslaught);
-        }
-        log!(
-            self,
-            "{} onslaught set to {}. ",
-            self.get_selected_char().name,
-            self.get_selected_char().onslaught
-        );
-        self.encounter.update();
-        self.save_char_list();
-    }
-
-    fn set_char_health(&mut self) {
-        {
-            let mut char = &mut self.get_selected_char_mut();
-            let result = textbox_open("Health: ");
-            char.health = result.parse::<i32>().unwrap_or(char.health);
-        }
-        log!(
-            self,
-            "{} health set to {}. ",
-            self.get_selected_char().name,
-            self.get_selected_char().health
-        );
-        self.encounter.update();
-        self.save_char_list();
     }
 
     fn new_round(&mut self) {
@@ -480,10 +449,18 @@ impl MainWindow {
         for (idx, msg) in self
             .encounter
             .log_iter()
-            .skip(std::cmp::max(self.encounter.log_len() as i32 - (ncurses::LINES() / 2 - 2), 0) as usize)
+            .skip(std::cmp::max(self.encounter.log_len() as i32 - (ncurses::LINES() / 2 - 2), 0)
+                as usize)
             .enumerate()
         {
-            drawcolor(self.logwin, idx as i32 + 1, 2, msg.as_str(), Color::White, ncurses::COLS() / 2 - 4);
+            drawcolor(
+                self.logwin,
+                idx as i32 + 1,
+                2,
+                msg.as_str(),
+                Color::White,
+                ncurses::COLS() / 2 - 4,
+            );
         }
         if self.message.is_some() {
             drawtext(
@@ -517,9 +494,15 @@ impl Drawable for MainWindow {
             ncurses::KEY_UP => self.cursor_move(-1),
             ncurses::KEY_DOWN => self.cursor_move(1),
             KEY_MARK_DONE => self.mark_done(),
-            KEY_INITIATIVE => self.set_char_initiative(),
-            KEY_ONSLAUGHT => self.set_char_onslaught(),
-            KEY_HEALTH => self.set_char_health(),
+            KEY_INITIATIVE => {
+                set_char_value!(self, "initiative", "Initiative: ", initiative);
+            }
+            KEY_ONSLAUGHT => {
+                set_char_value!(self, "onslaught", "Onslaught: ", onslaught);
+            }
+            KEY_HEALTH => {
+                set_char_value!(self, "health", "Health: ", health);
+            }
             KEY_NEW_ROUND => self.new_round(),
             KEY_ADD_CHAR => self.add_char(),
             KEY_ADD_MONSTER => self.add_monster(),
