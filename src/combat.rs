@@ -218,7 +218,8 @@ impl Encounter {
         self.update();
     }
 
-    pub fn add_char(&mut self, char: Character) {
+    pub fn add_char(&mut self, mut char: Character) {
+        char.reset();
         self.characters.push(char);
         self.update();
     }
