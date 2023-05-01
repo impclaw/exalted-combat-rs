@@ -54,6 +54,7 @@ impl MainWindow {
             message: None,
             action: None,
         };
+        window.load_char_list();
         window.encounter.update();
         return window;
     }
@@ -69,7 +70,8 @@ impl MainWindow {
 
     fn mark_done(&mut self) {
         self.get_selected_char_mut().done ^= true;
-        self.encounter.update()
+        self.encounter.update();
+        self.save_char_list();
     }
 
     fn get_char_by_index(&self, index: i32) -> &Character {
@@ -111,6 +113,7 @@ impl MainWindow {
         let result = textbox_open("Initiative: ");
         char.initiative = result.parse::<i32>().unwrap_or(char.initiative);
         self.encounter.update();
+        self.save_char_list();
     }
 
     fn set_char_onslaught(&mut self) {
@@ -118,6 +121,7 @@ impl MainWindow {
         let result = textbox_open("Onslaught: ");
         char.onslaught = result.parse::<i32>().unwrap_or(char.onslaught);
         self.encounter.update();
+        self.save_char_list();
     }
 
     fn set_char_health(&mut self) {
@@ -125,10 +129,12 @@ impl MainWindow {
         let result = textbox_open("Health: ");
         char.health = result.parse::<i32>().unwrap_or(char.health);
         self.encounter.update();
+        self.save_char_list();
     }
 
     fn new_round(&mut self) {
         self.encounter.new_round();
+        self.save_char_list();
     }
 
     fn add_char(&mut self) {
@@ -139,6 +145,7 @@ impl MainWindow {
         let joinbattle = textbox_open("Join Battle Dice: ");
         let char = Character::new(name, joinbattle.parse::<i32>().unwrap_or(0), 7);
         self.encounter.add_char(char);
+        self.save_char_list();
     }
 
     fn add_monster(&mut self) {
@@ -151,6 +158,7 @@ impl MainWindow {
             }
             None => {}
         }
+        self.save_char_list();
     }
 
     fn select_target(&mut self) {
@@ -177,6 +185,7 @@ impl MainWindow {
             };
         }
         self.encounter.update();
+        self.save_char_list();
         self.cancel();
     }
 
@@ -194,6 +203,7 @@ impl MainWindow {
             Err(_) => {}
         };
         self.encounter.update();
+        self.save_char_list();
         self.cancel();
     }
 
@@ -206,6 +216,7 @@ impl MainWindow {
         if self.selpos as usize > self.encounter.charcount() {
             self.selpos = self.encounter.charcount() as i32;
         }
+        self.save_char_list();
     }
 
     fn reset(&mut self) {
@@ -214,6 +225,34 @@ impl MainWindow {
 
     fn cancel(&mut self) {
         self.action = None;
+    }
+
+    fn load_char_list(&mut self) {
+        self.encounter = match std::fs::read_to_string("/tmp/__exaltedcombat") {
+            Ok(x) => match serde_json::from_str(&x) {
+                Ok(y) => y,
+                Err(e) => {
+                    panic!("Error parsing previous encounter state {}", e);
+                },
+            },
+            Err(_) => { 
+                Encounter::new()
+            },
+        };
+    }
+
+    fn save_char_list(&mut self) {
+        match serde_json::to_string(&self.encounter) {
+            Ok(x) => match std::fs::write("/tmp/__exaltedcombat", x) {
+                Ok(_) => {}
+                Err(_) => {
+                    self.message = Some("Unable to save encounter to file".into());
+                }
+            },
+            Err(_) => {
+                self.message = Some("Error parsing encounter to json".into());
+            }
+        }
     }
 
     fn draw_char_list(&self) {
@@ -315,7 +354,7 @@ impl MainWindow {
             self.rightwin,
             3,
             ncurses::COLS() / 4 - 1,
-            format!("Hardness: {}", char.hardness.unwrap_or(0)).as_str(),
+            format!("Hardness: {}", char.hardness).as_str(),
             Color::Blue,
             ncurses::COLS() / 4 - 2,
         );

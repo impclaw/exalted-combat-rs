@@ -17,24 +17,27 @@ pub struct Special {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Character {
     pub name: String,
-    #[serde(skip)]
+    #[serde(default = "Character::default_label")]
     pub label: Option<char>,
-    #[serde(skip)]
+    #[serde(default = "Character::default_zero")]
     pub initiative: i32,
+    #[serde(default = "Character::default_zero")]
     crashed_turns: i32,
     pub joinbattle: i32,
-    #[serde(skip)]
+    #[serde(default = "Character::default_zero")]
     pub onslaught: i32,
-    #[serde(skip)]
+    #[serde(default = "Character::default_false")]
     pub done: bool,
     #[serde(rename = "health")]
     pub maxhealth: i32,
-    #[serde(skip)]
+    #[serde(default = "Character::default_zero")]
+    #[serde(rename = "current_health")]
     pub health: i32,
     pub evasion: i32,
     pub parry: i32,
     pub soak: i32,
-    pub hardness: Option<i32>,
+    #[serde(default = "Character::default_zero")]
+    pub hardness: i32,
     pub attacks: Option<Vec<Attack>>,
     pub specials: Option<Vec<Special>>,
 }
@@ -54,11 +57,15 @@ impl Character {
             evasion: 0,
             parry: 0,
             soak: 0,
-            hardness: Some(0),
+            hardness: 0,
             attacks: None,
             specials: None,
         }
     }
+    fn default_label() -> Option<char> { None }
+    fn default_zero() -> i32 { 0 }
+    fn default_false() -> bool { false }
+    
     pub fn load_characters() -> Vec<Character> {
         let mut char_list: Vec<Character> = serde_json::from_str(
             std::fs::read_to_string("characters.json")
@@ -103,12 +110,6 @@ impl Character {
     pub fn dead(&self) -> bool {
         self.health <= 0
     }
-    pub fn hardness(&self) -> i32 {
-        return match self.crashed() {
-            true => 0,
-            false => self.hardness.unwrap_or(0), 
-        }
-    }
     pub fn sortkey(&self) -> i32 {
         let mut key = -self.initiative;
         if self.health <= 0 {
@@ -144,7 +145,7 @@ impl Character {
         self.finish();
     }
     pub fn take_decisive_hit(&mut self, damage: i32) {
-        if damage > self.hardness() {
+        if damage > self.hardness {
             self.health -= damage;
         }
     }
