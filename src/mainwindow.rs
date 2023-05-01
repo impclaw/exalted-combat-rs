@@ -133,9 +133,14 @@ impl MainWindow {
     }
 
     fn new_round(&mut self) {
-        log!(self, "New round! ");
-        self.encounter.new_round();
-        self.save_char_list();
+        match textbox_open("New Round? y/N").as_str() {
+            "y" => {
+                log!(self, "New round! ");
+                self.encounter.new_round();
+                self.save_char_list();
+            }
+            _ => {}
+        }
     }
 
     fn add_char(&mut self) {
@@ -247,6 +252,10 @@ impl MainWindow {
             self.message = Some(String::from("Cannot remove last character"));
             return;
         }
+        let text = format!("Remove {}? y/N", self.get_selected_char().name);
+        if textbox_open(text.as_str()).trim().to_lowercase().as_str() != "y" {
+            return;
+        }
         self.encounter.removechar(self.selpos as usize - 1);
         if self.selpos as usize > self.encounter.charcount() {
             self.selpos = self.encounter.charcount() as i32;
@@ -255,7 +264,10 @@ impl MainWindow {
     }
 
     fn reset(&mut self) {
-        self.encounter.reset();
+        match textbox_open("Reset? y/N").as_str() {
+            "y" => self.encounter.reset(),
+            _ => {}
+        }
     }
 
     fn cancel(&mut self) {
