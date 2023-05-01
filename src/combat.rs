@@ -232,6 +232,7 @@ impl Encounter {
     }
 
     pub fn reset(&mut self) {
+        self.log.clear();
         self.characters = Character::load_characters();
         self.update();
     }
