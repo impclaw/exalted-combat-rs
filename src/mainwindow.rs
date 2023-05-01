@@ -152,6 +152,9 @@ impl MainWindow {
 
     fn add_monster(&mut self) {
         let selmonster = textbox_select("Monster: ", &self.monsterdb.get_monster_names());
+        if selmonster == "" {
+            return;
+        }
         let label = char::from_u32(self.encounter.count_name(selmonster.as_str()) as u32 + 65);
         match self.monsterdb.get_monster_by_name(selmonster.as_str()) {
             Some(mut x) => {
