@@ -160,11 +160,11 @@ impl MainWindow {
             Some(mut x) => {
                 x.label = label;
                 self.encounter.add_char(x);
+                log!(self, "{} {} joined combat! ", selmonster, label.unwrap_or(' '));
+                self.save_char_list();
             }
             None => {}
         }
-        log!(self, "{} joined combat! ", selmonster);
-        self.save_char_list();
     }
 
     fn select_target(&mut self) {
