@@ -1,11 +1,7 @@
 use ncurses;
-mod combat;
-mod mainwindow;
-mod textbox;
-mod util;
-
-use util::Color;
-use util::Drawable;
+use exalted_combat::mainwindow::MainWindow;
+use exalted_combat::util::Color;
+use exalted_combat::util::Drawable;
 
 fn main() {
     ncurses::initscr();
@@ -21,7 +17,7 @@ fn main() {
     ncurses::init_pair(Color::Yellow as i16, ncurses::COLOR_YELLOW, 0);
     ncurses::init_pair(Color::Magenta as i16, ncurses::COLOR_MAGENTA, 0);
 
-    let mut window = mainwindow::MainWindow::new();
+    let mut window = MainWindow::new();
 
     loop {
         window.render();

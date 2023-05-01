@@ -79,7 +79,10 @@ impl Character {
         return monster_list;
     }
     pub fn reset(&mut self) {
-        self.initiative = roll_dice(self.joinbattle + 3);
+        self.initiative = roll_dice(self.joinbattle) + 3;
+        if self.initiative < 0 {
+            self.initiative = 0;
+        }
         self.health = self.maxhealth;
     }
     pub fn finish(&mut self) {
@@ -91,6 +94,12 @@ impl Character {
     }
     pub fn dead(&self) -> bool {
         self.health <= 0
+    }
+    pub fn hardness(&self) -> i32 {
+        return match self.crashed() {
+            true => 0,
+            false => self.hardness.unwrap_or(0), 
+        }
     }
     pub fn sortkey(&self) -> i32 {
         let mut key = -self.initiative;
@@ -119,7 +128,7 @@ impl Character {
         if damage < 0 {
             self.initiative += 1;
         } else {
-            self.initiative += damage;
+            self.initiative += damage + 1;
             if crashed {
                 self.initiative += 5;
             }
@@ -127,7 +136,9 @@ impl Character {
         self.finish();
     }
     pub fn take_decisive_hit(&mut self, damage: i32) {
-        self.health -= damage;
+        if damage > self.hardness() {
+            self.health -= damage;
+        }
     }
     pub fn do_decisive_hit(&mut self) {
         self.initiative = 3;
@@ -136,7 +147,7 @@ impl Character {
     pub fn do_decisive_miss(&mut self) {
         if self.initiative > 10 {
             self.initiative -= 3;
-        } else {
+        } else if self.initiative > 0 {
             self.initiative -= 2;
         }
         self.finish();

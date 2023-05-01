@@ -94,6 +94,10 @@ impl MainWindow {
         return self.get_char_by_index(self.selpos);
     }
 
+    fn get_action_source(&self, action: &Action) -> &Character {
+        return self.get_char_by_index(action.position);
+    }
+
     fn get_selected_char_mut(&mut self) -> &mut Character {
         return self.get_char_by_index_mut(self.selpos);
     }
@@ -156,6 +160,10 @@ impl MainWindow {
     }
 
     fn decisive_attack(&mut self, action: &Action) {
+        if self.get_action_source(action).crashed() || self.get_action_source(action).dead() {
+            self.message = Some(format!("Crashed/Dead character cannot decisive attack"));
+            return;
+        }
         let hit = textbox_open("Hit (dmg/N)?").trim().to_lowercase();
         if hit == "n" {
             self.get_action_source_mut(action).do_decisive_miss();
@@ -169,10 +177,14 @@ impl MainWindow {
             };
         }
         self.encounter.update();
-        self.reset();
+        self.cancel();
     }
 
     fn withering_attack(&mut self, action: &Action) {
+        if self.get_action_source(action).dead() {
+            self.message = Some(format!("Dead character cannot withering attack"));
+            return;
+        }
         match textbox_open("Damage (-1: miss)").parse::<i32>() {
             Ok(x) => {
                 let crashed = self.get_selected_char_mut().take_withering_hit(x);
@@ -182,7 +194,7 @@ impl MainWindow {
             Err(_) => {}
         };
         self.encounter.update();
-        self.reset();
+        self.cancel();
     }
 
     fn remove_char(&mut self) {
