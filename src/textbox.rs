@@ -17,6 +17,7 @@ pub fn textbox_select(title: &str, items: &Vec<&str>) -> String {
 fn textbox_internal(title: &str, items: Option<&Vec<&str>>) -> String {
     let win = ncurses::subwin(ncurses::stdscr(), ncurses::LINES() - 1, WND_WIDTH, 0, 0);
     let mut text = String::new();
+    let mut selpos = 3;
     loop {
         ncurses::werase(win);
         ncurses::wborder(win, 32, 32, 0, 32, 0, 0, 0, 0);
@@ -31,12 +32,12 @@ fn textbox_internal(title: &str, items: Option<&Vec<&str>>) -> String {
                 .iter()
                 .filter(|x| x.to_lowercase().contains(&text.to_lowercase()))
             {
-                if pos == 3 {
+                if pos == selpos {
                     selvalue = Some(item);
                     ncurses::wattron(win, ncurses::A_REVERSE());
                 }
                 ncurses::mvwaddnstr(win, pos, 1, item, WND_WIDTH);
-                if pos == 3 {
+                if pos == selpos {
                     ncurses::wattroff(win, ncurses::A_REVERSE());
                 }
                 pos += 1;
@@ -47,18 +48,34 @@ fn textbox_internal(title: &str, items: Option<&Vec<&str>>) -> String {
         }
 
         ncurses::wrefresh(win);
-        let input = ncurses::getch();
-        if input == KEY_ACCEPT && selvalue.is_none() {
-            return text;
-        } else if input == KEY_ACCEPT && selvalue.is_some() {
-            return selvalue.unwrap_or("").to_string();
-        } else if input == ncurses::KEY_BACKSPACE {
-            text.pop();
-        } else if input == KEY_REJECT {
-            text.clear();
-            return text;
-        } else if input >= KEY_PRINTABLE_START && input <= KEY_PRINTABLE_END {
-            text.push(char::from_u32(input as u32).unwrap_or('.'));
+        match ncurses::getch() {
+            KEY_ACCEPT => match selvalue {
+                Some(x) => {
+                    return x.to_string();
+                }
+                None => {
+                    return text;
+                }
+            },
+            KEY_REJECT => {
+                text.clear();
+                return text;
+            }
+            ncurses::KEY_UP if selpos > 3 => {
+                selpos -= 1;
+            }
+            ncurses::KEY_DOWN if selpos < pos - 1 => {
+                selpos += 1;
+            }
+            ncurses::KEY_BACKSPACE => {
+                text.pop();
+                selpos = 3;
+            }
+            c @ KEY_PRINTABLE_START..=KEY_PRINTABLE_END => {
+                text.push(char::from_u32(c as u32).unwrap_or('.'));
+                selpos = 3;
+            }
+            _ => {}
         }
     }
 }
