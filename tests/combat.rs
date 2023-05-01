@@ -102,3 +102,14 @@ fn decisive_hit_hardness() {
     defender.take_decisive_hit(3);
     assert_eq!(defender.health, 2);
 }
+
+#[test]
+fn timed_initiative_reset() {
+    let mut char = Character::new(String::from("Test"), 0, 5);
+    char.initiative = -1;
+    char.finish();
+    char.finish();
+    assert_eq!(char.initiative, -1);
+    char.finish();
+    assert_eq!(char.initiative, 3);
+}

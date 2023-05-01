@@ -21,6 +21,7 @@ pub struct Character {
     pub label: Option<char>,
     #[serde(skip)]
     pub initiative: i32,
+    crashed_turns: i32,
     pub joinbattle: i32,
     #[serde(skip)]
     pub onslaught: i32,
@@ -47,6 +48,7 @@ impl Character {
             health: maxhealth,
             joinbattle,
             initiative: 0,
+            crashed_turns: 0, 
             onslaught: 0,
             done: false,
             evasion: 0,
@@ -86,6 +88,12 @@ impl Character {
         self.health = self.maxhealth;
     }
     pub fn finish(&mut self) {
+        if self.crashed() && self.crashed_turns < 2 {
+            self.crashed_turns += 1;
+        } else if self.crashed() && self.crashed_turns >= 2 {
+            self.initiative = 3;
+            self.crashed_turns = 0;
+        }
         self.done = true;
         self.onslaught = 0;
     }
