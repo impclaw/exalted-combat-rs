@@ -480,7 +480,7 @@ impl MainWindow {
         for (idx, msg) in self
             .encounter
             .log_iter()
-            .skip(std::cmp::max(self.encounter.log_len() - (ncurses::LINES() as usize / 2 - 2), 0))
+            .skip(std::cmp::max(self.encounter.log_len() as i32 - (ncurses::LINES() / 2 - 2), 0) as usize)
             .enumerate()
         {
             drawcolor(self.logwin, idx as i32 + 1, 2, msg.as_str(), Color::White, ncurses::COLS() / 2 - 4);
