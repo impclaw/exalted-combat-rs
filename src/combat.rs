@@ -172,13 +172,27 @@ impl Character {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Encounter {
     characters: Vec<Character>,
+    log: Vec<String>, 
 }
 
 impl Encounter {
     pub fn new() -> Encounter {
         Encounter {
             characters: Character::load_characters(),
+            log: Vec::new(),
         }
+    }
+    
+    pub fn log(&mut self, message: String) {
+        self.log.push(message);
+    }
+
+    pub fn log_iter(&self) -> std::slice::Iter<String> {
+        return self.log.iter();
+    }
+
+    pub fn log_len(&self) -> usize {
+        return self.log.len();
     }
 
     pub fn charcount(&self) -> usize {

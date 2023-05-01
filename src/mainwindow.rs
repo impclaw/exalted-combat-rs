@@ -21,6 +21,12 @@ const KEY_REMOVE: i32 = 'r' as i32;
 const KEY_RESET: i32 = 'x' as i32;
 const KEY_CANCEL: i32 = 27;
 
+macro_rules! log {
+    ($mand:expr, $($t:tt)*) => {{
+        $mand.encounter.log(format!($($t)*));
+    }};
+}
+
 pub struct MainWindow {
     leftwin: *mut i8,
     rightwin: *mut i8,
@@ -70,6 +76,7 @@ impl MainWindow {
 
     fn mark_done(&mut self) {
         self.get_selected_char_mut().done ^= true;
+        log!(self, "{} finished his turn. ", self.get_selected_char().name);
         self.encounter.update();
         self.save_char_list();
     }
@@ -109,30 +116,55 @@ impl MainWindow {
     }
 
     fn set_char_initiative(&mut self) {
-        let mut char = &mut self.get_selected_char_mut();
-        let result = textbox_open("Initiative: ");
-        char.initiative = result.parse::<i32>().unwrap_or(char.initiative);
+        {
+            let mut char = &mut self.get_selected_char_mut();
+            let result = textbox_open("Initiative: ");
+            char.initiative = result.parse::<i32>().unwrap_or(char.initiative);
+        }
+        log!(
+            self,
+            "{} initiative set to {}. ",
+            self.get_selected_char().name,
+            self.get_selected_char().initiative
+        );
         self.encounter.update();
         self.save_char_list();
     }
 
     fn set_char_onslaught(&mut self) {
-        let mut char = &mut self.get_selected_char_mut();
-        let result = textbox_open("Onslaught: ");
-        char.onslaught = result.parse::<i32>().unwrap_or(char.onslaught);
+        {
+            let mut char = &mut self.get_selected_char_mut();
+            let result = textbox_open("Onslaught: ");
+            char.onslaught = result.parse::<i32>().unwrap_or(char.onslaught);
+        }
+        log!(
+            self,
+            "{} onslaught set to {}. ",
+            self.get_selected_char().name,
+            self.get_selected_char().onslaught
+        );
         self.encounter.update();
         self.save_char_list();
     }
 
     fn set_char_health(&mut self) {
-        let mut char = &mut self.get_selected_char_mut();
-        let result = textbox_open("Health: ");
-        char.health = result.parse::<i32>().unwrap_or(char.health);
+        {
+            let mut char = &mut self.get_selected_char_mut();
+            let result = textbox_open("Health: ");
+            char.health = result.parse::<i32>().unwrap_or(char.health);
+        }
+        log!(
+            self,
+            "{} health set to {}. ",
+            self.get_selected_char().name,
+            self.get_selected_char().health
+        );
         self.encounter.update();
         self.save_char_list();
     }
 
     fn new_round(&mut self) {
+        log!(self, "New round! ");
         self.encounter.new_round();
         self.save_char_list();
     }
@@ -143,6 +175,7 @@ impl MainWindow {
             return;
         }
         let joinbattle = textbox_open("Join Battle Dice: ");
+        log!(self, "{} joined combat! ", name);
         let char = Character::new(name, joinbattle.parse::<i32>().unwrap_or(0), 7);
         self.encounter.add_char(char);
         self.save_char_list();
@@ -158,6 +191,7 @@ impl MainWindow {
             }
             None => {}
         }
+        log!(self, "{} joined combat! ", selmonster);
         self.save_char_list();
     }
 
@@ -175,11 +209,24 @@ impl MainWindow {
         let hit = textbox_open("Hit (dmg/N)?").trim().to_lowercase();
         if hit == "n" {
             self.get_action_source_mut(action).do_decisive_miss();
+            log!(
+                self,
+                "{} misses decisive attack on {}. ",
+                self.get_action_source(action).name,
+                self.get_selected_char().name
+            );
         } else {
             match hit.parse::<i32>() {
                 Ok(x) => {
                     self.get_action_source_mut(action).do_decisive_hit();
                     self.get_selected_char_mut().take_decisive_hit(x);
+                    log!(
+                        self,
+                        "{} hits decisive attack on {}, with {} damage!",
+                        self.get_action_source(action).name,
+                        self.get_selected_char().name,
+                        x
+                    );
                 }
                 Err(_) => {}
             };
@@ -199,6 +246,22 @@ impl MainWindow {
                 let crashed = self.get_selected_char_mut().take_withering_hit(x);
                 self.get_action_source_mut(action)
                     .do_withering_hit(x, crashed);
+                if x == -1 {
+                    log!(
+                        self,
+                        "{} misses withering attack on {}. ",
+                        self.get_action_source(action).name,
+                        self.get_selected_char().name
+                    );
+                } else {
+                    log!(
+                        self,
+                        "{} hits a withering attack on {} for {} damage. ",
+                        self.get_action_source(action).name,
+                        self.get_selected_char().name,
+                        x
+                    );
+                }
             }
             Err(_) => {}
         };
@@ -233,11 +296,9 @@ impl MainWindow {
                 Ok(y) => y,
                 Err(e) => {
                     panic!("Error parsing previous encounter state {}", e);
-                },
+                }
             },
-            Err(_) => { 
-                Encounter::new()
-            },
+            Err(_) => Encounter::new(),
         };
     }
 
@@ -416,6 +477,14 @@ impl MainWindow {
         ncurses::werase(self.logwin);
         ncurses::wborder(self.logwin, 32, 32, 0, 32, 0, 0, 0, 0);
         drawtext(self.logwin, 0, 2, "Combat Log", Color::White, true, true, false, false, 32);
+        for (idx, msg) in self
+            .encounter
+            .log_iter()
+            .skip(std::cmp::max(self.encounter.log_len() - (ncurses::LINES() as usize / 2 - 2), 0))
+            .enumerate()
+        {
+            drawcolor(self.logwin, idx as i32 + 1, 2, msg.as_str(), Color::White, ncurses::COLS() / 2 - 4);
+        }
         if self.message.is_some() {
             drawtext(
                 self.logwin,
