@@ -220,9 +220,9 @@ impl MainWindow {
         }
         match textbox_open("Damage (-1: miss)").parse::<i32>() {
             Ok(x) => {
-                let crashed = self.get_selected_char_mut().take_withering_hit(x);
-                self.get_action_source_mut(action)
-                    .do_withering_hit(x, crashed);
+                let attackername = self.get_action_source(action).name.clone();
+                let crashed = self.get_selected_char_mut().take_withering_hit(attackername, x);
+                self.get_action_source_mut(action).do_withering_hit(x, crashed);
                 if x == -1 {
                     log!(
                         self,
@@ -403,8 +403,25 @@ impl MainWindow {
             Color::Blue,
             ncurses::COLS() / 4 - 2,
         );
+        drawcolor(
+            self.rightwin,
+            4,
+            2,
+            format!("Crashed for: {}", char.crashed_turns).as_str(),
+            Color::Blue,
+            ncurses::COLS() / 4 - 2,
+        );
+        drawcolor(
+            self.rightwin,
+            4,
+            ncurses::COLS() / 4 - 1,
+            format!("Crasher:  {}", char.crasher_name.as_ref().unwrap_or(&String::from("None")))
+                .as_str(),
+            Color::Blue,
+            ncurses::COLS() / 4 - 2,
+        );
 
-        let mut pos = 4;
+        let mut pos = 5;
         if char.attacks.is_some() {
             for attack in char.attacks.as_ref().unwrap().iter() {
                 drawcolor(

@@ -28,12 +28,12 @@ fn withering_attack_initiative() {
     defender.initiative = 5;
 
     //An attack with 0 damage, only +1i for attacker
-    attacker.do_withering_hit(0, defender.take_withering_hit(0));
+    attacker.do_withering_hit(0, defender.take_withering_hit("n".into(), 0));
     assert_eq!(defender.initiative, 5);
     assert_eq!(attacker.initiative, 1 + 1);
 
     //An attack with 3 damage, +4i for attacker, -3i for defender
-    attacker.do_withering_hit(3, defender.take_withering_hit(3));
+    attacker.do_withering_hit(3, defender.take_withering_hit("n".into(), 3));
     assert_eq!(defender.initiative, 2);
     assert_eq!(attacker.initiative, 2 + 1 + 3);
 }
@@ -45,7 +45,7 @@ fn withering_attack_crash_initiative() {
     attacker.initiative = 1;
     defender.initiative = 1;
 
-    attacker.do_withering_hit(2, defender.take_withering_hit(2));
+    attacker.do_withering_hit(2, defender.take_withering_hit("n".into(), 2));
     assert_eq!(defender.initiative, -1);
     assert_eq!(attacker.initiative, 1 + 1 + 2 + 5);
 }

@@ -22,7 +22,8 @@ pub struct Character {
     #[serde(default = "Character::default_zero")]
     pub initiative: i32,
     #[serde(default = "Character::default_zero")]
-    crashed_turns: i32,
+    pub crashed_turns: i32,
+    pub crasher_name: Option<String>, 
     pub joinbattle: i32,
     #[serde(default = "Character::default_zero")]
     pub onslaught: i32,
@@ -52,6 +53,7 @@ impl Character {
             joinbattle,
             initiative: 0,
             crashed_turns: 0, 
+            crasher_name: None, 
             onslaught: 0,
             done: false,
             evasion: 0,
@@ -123,7 +125,7 @@ impl Character {
     pub fn ready(&mut self) {
         self.done = false;
     }
-    pub fn take_withering_hit(&mut self, damage: i32) -> bool {
+    pub fn take_withering_hit(&mut self, attacker_name: String, damage: i32) -> bool {
         let mut crashed = false;
         if damage >= 0 {
             crashed = self.crashed();
@@ -131,9 +133,13 @@ impl Character {
             self.onslaught -= 1;
             crashed = self.crashed() && !crashed;
         }
+        if crashed {
+            self.crasher_name = Some(attacker_name);
+        }
         return crashed;
     }
     pub fn do_withering_hit(&mut self, damage: i32, crashed: bool) {
+        let wascrashed = self.crashed();
         if damage < 0 {
             self.initiative += 1;
         } else {
@@ -141,6 +147,9 @@ impl Character {
             if crashed {
                 self.initiative += 5;
             }
+        }
+        if wascrashed && !self.crashed() {
+            self.crasher_name = None;
         }
         self.finish();
     }
