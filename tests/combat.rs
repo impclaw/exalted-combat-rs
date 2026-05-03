@@ -113,3 +113,23 @@ fn timed_initiative_reset() {
     char.finish();
     assert_eq!(char.initiative, 3);
 }
+
+#[test]
+fn initiative_shift() {
+    let mut attacker = Character::new(String::from("Attacker"), 0, 1);
+    let mut defender = Character::new(String::from("Defender"), 0, 1);
+    attacker.initiative = 1;
+    defender.initiative = 1;
+
+    attacker.do_withering_hit(3, true);
+    defender.take_withering_hit("Attacker".into(), 3);
+
+    assert_eq!(defender.initiative, -2);
+    assert_eq!(attacker.initiative, 10);
+    assert_eq!(defender.crasher_name, Some("Attacker".into()));
+
+    defender.do_withering_hit(12, true);
+    attacker.take_withering_hit("Defender".into(), 12);
+
+    //Measure initiative shift somehow
+}

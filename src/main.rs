@@ -1,10 +1,10 @@
-use ncurses;
 use exalted_combat::mainwindow::MainWindow;
 use exalted_combat::util::Color;
 use exalted_combat::util::Drawable;
 
 fn main() {
     ncurses::initscr();
+    ncurses::setlocale(ncurses::LcCategory::all, "");
     ncurses::noecho();
     ncurses::set_escdelay(0);
     ncurses::keypad(ncurses::stdscr(), true);

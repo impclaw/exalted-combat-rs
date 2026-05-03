@@ -67,7 +67,7 @@ impl Character {
     fn default_label() -> Option<char> { None }
     fn default_zero() -> i32 { 0 }
     fn default_false() -> bool { false }
-    
+
     pub fn load_characters() -> Vec<Character> {
         let mut char_list: Vec<Character> = serde_json::from_str(
             std::fs::read_to_string("characters.json")
@@ -78,7 +78,7 @@ impl Character {
         for char in char_list.iter_mut() {
             char.reset();
         }
-        return char_list;
+        char_list
     }
     pub fn load_monsters() -> Vec<Character> {
         let monster_list: Vec<Character> = serde_json::from_str(
@@ -87,7 +87,7 @@ impl Character {
                 .as_str(),
         )
         .expect("monsters.json has invalid formatting");
-        return monster_list;
+        monster_list
     }
     pub fn reset(&mut self) {
         self.initiative = roll_dice(self.joinbattle) + 3;
@@ -120,7 +120,7 @@ impl Character {
         if self.done {
             key += 1000;
         }
-        return key;
+        key
     }
     pub fn ready(&mut self) {
         self.done = false;
@@ -136,7 +136,7 @@ impl Character {
         if crashed {
             self.crasher_name = Some(attacker_name);
         }
-        return crashed;
+        crashed
     }
     pub fn do_withering_hit(&mut self, damage: i32, crashed: bool) {
         let wascrashed = self.crashed();
@@ -154,10 +154,10 @@ impl Character {
         self.finish();
     }
     pub fn hardness(&self) -> i32 {
-        return match self.crashed() {
+        match self.crashed() {
             true => 0, 
             false => self.hardness
-        };
+        }
     }
     pub fn take_decisive_hit(&mut self, damage: i32) {
         if damage > self.hardness() {
@@ -184,6 +184,12 @@ pub struct Encounter {
     log: Vec<String>, 
 }
 
+impl Default for Encounter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Encounter {
     pub fn new() -> Encounter {
         Encounter {
@@ -191,33 +197,33 @@ impl Encounter {
             log: Vec::new(),
         }
     }
-    
+
     pub fn log(&mut self, message: String) {
         self.log.push(message);
     }
 
-    pub fn log_iter(&self) -> std::slice::Iter<String> {
-        return self.log.iter();
+    pub fn log_iter(&self) -> impl Iterator<Item = &String> {
+        self.log.iter()
     }
 
     pub fn log_len(&self) -> usize {
-        return self.log.len();
+        self.log.len()
     }
 
     pub fn charcount(&self) -> usize {
-        return self.characters.len();
+        self.characters.len()
     }
 
-    pub fn char_iter(&self) -> std::slice::Iter<Character> {
-        return self.characters.iter();
+    pub fn char_iter(&self) -> impl Iterator<Item = &Character> {
+        self.characters.iter()
     }
 
     pub fn char_at(&self, index: usize) -> Option<&Character> {
-        return self.characters.get(index);
+        self.characters.get(index)
     }
 
     pub fn char_at_mut(&mut self, index: usize) -> Option<&mut Character> {
-        return self.characters.get_mut(index);
+        self.characters.get_mut(index)
     }
 
     pub fn new_round(&mut self) {
@@ -234,7 +240,7 @@ impl Encounter {
     }
 
     pub fn count_name(&self, name: &str) -> usize {
-        return self.characters.iter().filter(|x| x.name == name).count();
+        self.characters.iter().filter(|x| x.name == name).count()
     }
 
     pub fn removechar(&mut self, index: usize) {
@@ -264,7 +270,7 @@ impl MonsterDB {
     }
 
     pub fn get_monster_names(&self) -> Vec<&str> {
-        return self.monsters.iter().map(|x| x.name.as_str()).collect();
+        self.monsters.iter().map(|x| x.name.as_str()).collect()
     }
 
     pub(crate) fn get_monster_by_name(&self, name: &str) -> Option<Character> {
@@ -275,6 +281,6 @@ impl MonsterDB {
                 return Some(monster_copy);
             }
         }
-        return None;
+        None
     }
 }

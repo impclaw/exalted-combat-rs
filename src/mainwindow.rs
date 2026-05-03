@@ -29,7 +29,7 @@ macro_rules! log {
 
 macro_rules! set_char_value {
     ($self:ident, $name:literal, $title:literal, $val:ident) => {{
-        let mut char = &mut $self.get_selected_char_mut();
+        let char = &mut $self.get_selected_char_mut();
         let result = textbox_open($title);
         char.$val = result.parse::<i32>().unwrap_or(char.$val);
     }
@@ -61,6 +61,10 @@ struct Action {
     position: i32,
 }
 
+impl Default for MainWindow {
+    fn default() -> Self { Self::new() }
+}
+
 impl MainWindow {
     pub fn new() -> MainWindow {
         let midw = ncurses::COLS() / 2;
@@ -79,7 +83,7 @@ impl MainWindow {
         };
         window.load_char_list();
         window.encounter.update();
-        return window;
+        window
     }
 
     fn cursor_move(&mut self, amount: i32) {
@@ -99,53 +103,50 @@ impl MainWindow {
     }
 
     fn get_char_by_index(&self, index: i32) -> &Character {
-        return match self.encounter.char_at(index as usize - 1) {
+        match self.encounter.char_at(index as usize - 1) {
             Some(x) => x,
             None => {
                 panic!("Selected character out of bounds");
             }
-        };
+        }
     }
 
     fn get_char_by_index_mut(&mut self, index: i32) -> &mut Character {
-        return match self.encounter.char_at_mut(index as usize - 1) {
+        match self.encounter.char_at_mut(index as usize - 1) {
             Some(x) => x,
             None => {
                 panic!("Selected character out of bounds");
             }
-        };
+        }
     }
 
     fn get_selected_char(&self) -> &Character {
-        return self.get_char_by_index(self.selpos);
+        self.get_char_by_index(self.selpos)
     }
 
     fn get_action_source(&self, action: &Action) -> &Character {
-        return self.get_char_by_index(action.position);
+        self.get_char_by_index(action.position)
     }
 
     fn get_selected_char_mut(&mut self) -> &mut Character {
-        return self.get_char_by_index_mut(self.selpos);
+        self.get_char_by_index_mut(self.selpos)
     }
 
     fn get_action_source_mut(&mut self, action: &Action) -> &mut Character {
-        return self.get_char_by_index_mut(action.position);
+        self.get_char_by_index_mut(action.position)
     }
 
     fn new_round(&mut self) {
-        match textbox_open("New Round? y/N").as_str() {
-            "y" => {
-                log!(self, "New round! ");
-                self.encounter.new_round();
-                self.save_char_list();
-            }
-            _ => {}
+        if textbox_open("New Round? y/N").as_str() == "y" {
+            log!(self, "New round! ");
+            self.encounter.new_round();
+            self.save_char_list();
         }
     }
 
     fn add_char(&mut self) {
         let name = textbox_open("Name: ");
-        if name == "" {
+        if name.is_empty() {
             return;
         }
         let joinbattle = textbox_open("Join Battle Dice: ");
@@ -157,18 +158,15 @@ impl MainWindow {
 
     fn add_monster(&mut self) {
         let selmonster = textbox_select("Monster: ", &self.monsterdb.get_monster_names());
-        if selmonster == "" {
+        if selmonster.is_empty() {
             return;
         }
         let label = char::from_u32(self.encounter.count_name(selmonster.as_str()) as u32 + 65);
-        match self.monsterdb.get_monster_by_name(selmonster.as_str()) {
-            Some(mut x) => {
-                x.label = label;
-                self.encounter.add_char(x);
-                log!(self, "{} {} joined combat! ", selmonster, label.unwrap_or(' '));
-                self.save_char_list();
-            }
-            None => {}
+        if let Some(mut x) = self.monsterdb.get_monster_by_name(selmonster.as_str()) {
+            x.label = label;
+            self.encounter.add_char(x);
+            log!(self, "{} {} joined combat! ", selmonster, label.unwrap_or(' '));
+            self.save_char_list();
         }
     }
 
@@ -180,7 +178,7 @@ impl MainWindow {
 
     fn decisive_attack(&mut self, action: &Action) {
         if self.get_action_source(action).crashed() || self.get_action_source(action).dead() {
-            self.message = Some(format!("Crashed/Dead character cannot decisive attack"));
+            self.message = Some(("Crashed/Dead character cannot decisive attack").to_string());
             return;
         }
         let hit = textbox_open("Hit (dmg/N)?").trim().to_lowercase();
@@ -193,20 +191,17 @@ impl MainWindow {
                 self.get_selected_char().name
             );
         } else {
-            match hit.parse::<i32>() {
-                Ok(x) => {
-                    self.get_action_source_mut(action).do_decisive_hit();
-                    self.get_selected_char_mut().take_decisive_hit(x);
-                    log!(
-                        self,
-                        "{} hits decisive attack on {}, with {} damage!",
-                        self.get_action_source(action).name,
-                        self.get_selected_char().name,
-                        x
-                    );
-                }
-                Err(_) => {}
-            };
+            if let Ok(x) = hit.parse::<i32>() {
+                self.get_action_source_mut(action).do_decisive_hit();
+                self.get_selected_char_mut().take_decisive_hit(x);
+                log!(
+                    self,
+                    "{} hits decisive attack on {}, with {} damage!",
+                    self.get_action_source(action).name,
+                    self.get_selected_char().name,
+                    x
+                );
+            }
         }
         self.encounter.update();
         self.save_char_list();
@@ -215,33 +210,33 @@ impl MainWindow {
 
     fn withering_attack(&mut self, action: &Action) {
         if self.get_action_source(action).dead() {
-            self.message = Some(format!("Dead character cannot withering attack"));
+            self.message = Some(("Dead character cannot withering attack").to_string());
             return;
         }
-        match textbox_open("Damage (-1: miss)").parse::<i32>() {
-            Ok(x) => {
-                let attackername = self.get_action_source(action).name.clone();
-                let crashed = self.get_selected_char_mut().take_withering_hit(attackername, x);
-                self.get_action_source_mut(action).do_withering_hit(x, crashed);
-                if x == -1 {
-                    log!(
-                        self,
-                        "{} misses withering attack on {}. ",
-                        self.get_action_source(action).name,
-                        self.get_selected_char().name
-                    );
-                } else {
-                    log!(
-                        self,
-                        "{} hits a withering attack on {} for {} damage. ",
-                        self.get_action_source(action).name,
-                        self.get_selected_char().name,
-                        x
-                    );
-                }
+        if let Ok(x) = textbox_open("Damage (-1: miss)").parse::<i32>() {
+            let attackername = self.get_action_source(action).name.clone();
+            let crashed = self
+                .get_selected_char_mut()
+                .take_withering_hit(attackername, x);
+            self.get_action_source_mut(action)
+                .do_withering_hit(x, crashed);
+            if x == -1 {
+                log!(
+                    self,
+                    "{} misses withering attack on {}. ",
+                    self.get_action_source(action).name,
+                    self.get_selected_char().name
+                );
+            } else {
+                log!(
+                    self,
+                    "{} hits a withering attack on {} for {} damage. ",
+                    self.get_action_source(action).name,
+                    self.get_selected_char().name,
+                    x
+                );
             }
-            Err(_) => {}
-        };
+        }
         self.encounter.update();
         self.save_char_list();
         self.cancel();
@@ -264,9 +259,8 @@ impl MainWindow {
     }
 
     fn reset(&mut self) {
-        match textbox_open("Reset? y/N").as_str() {
-            "y" => self.encounter.reset(),
-            _ => {}
+        if textbox_open("Reset? y/N").as_str() == "y"{
+            self.encounter.reset();
         }
     }
 
@@ -304,8 +298,7 @@ impl MainWindow {
         ncurses::werase(self.leftwin);
         ncurses::wborder(self.leftwin, 32, 32, 0, 32, 0, 0, 0, 0);
         drawtext(self.leftwin, 0, 2, "Participants", Color::White, true, true, false, false, 32);
-        let mut pos: i32 = 1;
-        for char in self.encounter.char_iter() {
+        for(pos, char) in (1_i32..).zip(self.encounter.char_iter()) {
             let color = if self.markedpos == pos - 1 {
                 Color::Blue
             } else if self.action.is_some() && self.action.as_ref().unwrap().position == pos {
@@ -324,7 +317,7 @@ impl MainWindow {
                 2,
                 format!(
                     "{:<width$}{:<4}{:<4}{:<2}{:<2}{:<6}",
-                    format!("{} {}", char.name, char.label.clone().unwrap_or(' ')),
+                    format!("{} {}", char.name, char.label.unwrap_or(' ')),
                     char.initiative,
                     char.onslaught,
                     if char.done { "D" } else { "" },
@@ -340,7 +333,6 @@ impl MainWindow {
                 char.done,
                 ncurses::COLS() / 2,
             );
-            pos += 1;
         }
 
         drawcolor(
@@ -422,8 +414,8 @@ impl MainWindow {
         );
 
         let mut pos = 5;
-        if char.attacks.is_some() {
-            for attack in char.attacks.as_ref().unwrap().iter() {
+        if let Some(attacks) = &char.attacks {
+            for attack in attacks.iter() {
                 drawcolor(
                     self.rightwin,
                     pos,
@@ -437,8 +429,8 @@ impl MainWindow {
         }
         pos += 1;
 
-        if char.specials.is_some() {
-            for special in char.specials.as_ref().unwrap().iter() {
+        if let Some(specials) = &char.specials {
+            for special in specials.iter() {
                 if pos + 2 > ncurses::LINES() - 3 {
                     drawcolor(self.rightwin, pos, 2, "...", Color::Yellow, ncurses::COLS() / 2 - 1);
                     break;
@@ -494,12 +486,12 @@ impl MainWindow {
                 ncurses::COLS() / 2 - 4,
             );
         }
-        if self.message.is_some() {
+        if let Some(message) = &self.message {
             drawtext(
                 self.logwin,
                 ncurses::LINES() / 2 - 1,
                 2,
-                &self.message.as_ref().unwrap().as_str(),
+                message.as_str(),
                 Color::Blue,
                 false,
                 false,
